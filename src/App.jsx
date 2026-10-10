@@ -1,14 +1,15 @@
 import './App.css'
-import Navbar from './components/Navbar'        
-import Footer from './components/Footer'
+import Footer from './components/Footer';
+import Navbar from './components/Navbar';
+import Index from './structures/Index'
+
 
 function App() {
 return(
     <div>
-      <Navbar/>
-      <div>
-        <Footer/>
-      </div>
+      <Navbar />
+      <Index />
+      <Footer />
     </div>
   );
 }
