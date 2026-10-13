@@ -18,7 +18,6 @@ export default function Footer() {
                                 <a href="https://x.com/home"><i class="bi bi-twitter fs-2 me-3"></i></a>
                                 <a href="https://www.instagram.com"><i class="bi bi-instagram fs-2 me-3"></i></a>
                                 <a href="https://www.linkedin.com"><i class="bi bi-linkedin fs-2 me-3"></i></a>
-                                <a href="easterEgg.html"><i class="bi bi-emoji-tear fs-2"></i></a>
                             </div>
                         </div>
                     </div>
