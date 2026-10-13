@@ -1,4 +1,4 @@
-function Categorias(){
+export default function Categorias(){
     return(
         <section class="container my-5 text-center">
             <h2 class="mb-4">
@@ -73,4 +73,3 @@ function Categorias(){
         </section>
     )
 }
-export default Categorias;

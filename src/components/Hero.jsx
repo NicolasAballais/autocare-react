@@ -1,4 +1,4 @@
-function Hero() {
+export default function Hero() {
     return (
         <section class="container text-center my-5 bg-dark-custom p-5 rounded shadow">
             <h1 >Bienvenido a AutoCare<span class="text-danger">Pro</span></h1>
@@ -39,5 +39,3 @@ function Hero() {
         </section>
     )
 }
-
-export default Hero;

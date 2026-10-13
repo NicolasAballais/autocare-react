@@ -1,4 +1,4 @@
-function Footer() {
+export default function Footer() {
     return (
         
             <footer class="bg-dark text-white text-center p-4">
@@ -32,5 +32,3 @@ function Footer() {
         
     );
 }
-
-export default Footer;

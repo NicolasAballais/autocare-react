@@ -1,4 +1,4 @@
-function Descatados(){
+export default function Destacados(){
     return(
         <section class="container my-5">
             <div class="text-center mb-4">
@@ -16,4 +16,3 @@ function Descatados(){
         </section>
     )
 }
-export default Descatados;

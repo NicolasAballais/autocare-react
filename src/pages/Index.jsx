@@ -3,7 +3,7 @@ import Hero from '../components/Hero';
 import Destacados from '../components/Destacados';
 import Categorias from '../components/Categorias';
 
-function Index() {
+export default function Index() {
     return (
         <div>
             <Hero />
@@ -12,4 +12,3 @@ function Index() {
         </div>
     )
 }
-export default Index;
