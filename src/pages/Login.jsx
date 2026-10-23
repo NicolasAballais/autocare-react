@@ -1,43 +1,138 @@
-﻿export default function Login() {
+﻿import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { iniciarSesion } from '../data/usuarios';
+
+export default function Login() {
+
+    const navigate = useNavigate();
+
+    const [correo, setCorreo] = useState('');
+    const [password, setPassword] = useState('');
+    const [mensaje, setMensaje] = useState('');
+
+    function manejarLogin(evento) {
+
+        evento.preventDefault();
+
+        setMensaje('');
+
+        const resultado = iniciarSesion(
+            correo,
+            password
+        );
+
+        if (!resultado.exito) {
+            setMensaje(resultado.mensaje);
+            return;
+        }
+
+        if (resultado.usuario.rol === 'admin') {
+            navigate('/admin');
+        } else {
+            navigate('/');
+        }
+    }
+
     return (
-        <div className="row justify-content-center py-5">
-            <div className="col-md-5">
-                <div className="card shadow">
-                    <div className="card-body p-5">
-                        <div className="text-center mb-3">
-                            <div className="fs-1 text-danger">
-                                <i className="bi bi-speedometer2"></i>
+        <main className="container my-5">
+
+            <div className="row justify-content-center">
+
+                <div className="col-md-7 col-lg-6">
+
+                    <div className="card shadow-sm">
+
+                        <div className="card-body p-4">
+
+                            <div className="text-center mb-4">
+
+                                <i className="bi bi-speedometer2 fs-1 text-danger"></i>
+
+                                <h3 className="mt-2">
+                                    AutoCare<span className="text-danger">Pro</span>
+                                </h3>
+
+                                <h2>
+                                    Iniciar Sesión
+                                </h2>
+
                             </div>
-                            <h2 className="h4 fw-bold mb-0">
-                                AutoCare
-                                <span className="text-danger">
-                                    Pro
+
+                            {mensaje && (
+
+                                <div className="alert alert-danger">
+                                    {mensaje}
+                                </div>
+
+                            )}
+
+                            <form onSubmit={manejarLogin}>
+
+                                <div className="mb-3">
+
+                                    <label className="form-label">
+                                        Correo Electrónico
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        value={correo}
+                                        onChange={(e) => setCorreo(e.target.value)}
+                                        placeholder="ejemplo@duoc.cl"
+                                        required
+                                    />
+
+                                </div>
+
+                                <div className="mb-3">
+
+                                    <label className="form-label">
+                                        Contraseña
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="btn btn-danger w-100"
+                                >
+                                    Ingresar
+                                </button>
+
+                            </form>
+
+                            <div className="text-center mt-3">
+
+                                <span>
+                                    ¿No tienes cuenta?{' '}
                                 </span>
-                            </h2>
+
+                                <Link
+                                    to="/register"
+                                    className="text-danger fw-bold"
+                                >
+                                    Regístrate aquí
+                                </Link>
+
+                            </div>
+
                         </div>
-                        <h2 className="text-center mb-4">Iniciar Sesión</h2>
-                    
-                        <form id="loginForm" noValidate>
-                            <div className="mb-3">
-                                <label htmlFor="emailLogin" className="form-label">Correo Electrónico</label>
-                                <input type="email" className="form-control" id="emailLogin" placeholder="ejemplo@duoc.cl"/>
-                                
-                                <div id="emailError" className="text-danger mt-1 fw-bold" ></div>
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="passLogin" className="form-label">Contraseña</label>
-                                <input type="password" className="form-control" id="passLogin"/>
-                                
-                                <div id="passError" className="text-danger mt-1 fw-bold" ></div>
-                            </div>
-                            <button type="submit" className="btn btn-danger w-100 btn-lg">Ingresar</button>
-                            <div className="text-center mt-4">
-                                <p>¿No tienes cuenta? <a href="register.html" className="text-danger fw-bold text-decoration-none">Regí­strate aquí</a></p>
-                            </div>
-                        </form>
+
                     </div>
+
                 </div>
+
             </div>
-        </div>
+
+        </main>
     );
 }

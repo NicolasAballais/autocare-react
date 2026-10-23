@@ -1,10 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { obtenerSesion, cerrarSesion } from '../data/usuarios';
 import { useCarrito } from '../context/CarritoContext';
 
 export default function Navbar() {
+
+    useLocation();
+
+    const sesion = obtenerSesion();
     const { cantidadTotal } = useCarrito();
+
+    function manejarCerrarSesion() {
+        cerrarSesion();
+        window.location.href = '/';
+    }
+
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+
             <div className="container">
 
                 <Link
@@ -30,6 +42,7 @@ export default function Navbar() {
                     className="collapse navbar-collapse"
                     id="navbarNav"
                 >
+
                     <ul className="navbar-nav">
 
                         <li className="nav-item">
@@ -53,14 +66,20 @@ export default function Navbar() {
                             </Link>
                         </li>
 
-                        <li className="nav-item">
-                            <Link
-                                to="/admin"
-                                className="nav-link"
-                            >
-                                Administración
-                            </Link>
-                        </li>
+                        {sesion?.rol === 'admin' && (
+
+                            <li className="nav-item">
+
+                                <Link
+                                    to="/admin"
+                                    className="nav-link"
+                                >
+                                    Administración
+                                </Link>
+
+                            </li>
+
+                        )}
 
                         <li className="nav-item">
                             <Link className="nav-link" to="/nosotros">
@@ -82,13 +101,39 @@ export default function Navbar() {
 
                     </ul>
 
-                    <Link
-                        to="/login"
-                        className="nav-link text-white ms-auto"
-                    >
-                        <i className="bi bi-person-circle fs-4 me-1"></i>
-                        Iniciar Sesión
-                    </Link>
+                    {sesion ? (
+
+                        <div className="d-flex align-items-center gap-2 ms-auto">
+
+                            <span className="text-white">
+
+                                <i className="bi bi-person-circle fs-4 me-1"></i>
+
+                                {sesion.nombre}
+
+                            </span>
+
+                            <button
+                                type="button"
+                                className="btn btn-outline-light btn-sm"
+                                onClick={manejarCerrarSesion}
+                            >
+                                Cerrar sesión
+                            </button>
+
+                        </div>
+
+                    ) : (
+
+                        <Link
+                            to="/login"
+                            className="nav-link text-white ms-auto"
+                        >
+                            <i className="bi bi-person-circle fs-4 me-1"></i>
+                            Iniciar Sesión
+                        </Link>
+
+                    )}
 
                     <Link
                         to="/carrito"
@@ -99,10 +144,13 @@ export default function Navbar() {
                         <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
                             {cantidadTotal}
                         </span>
+
                     </Link>
 
                 </div>
+
             </div>
+
         </nav>
     );
 }

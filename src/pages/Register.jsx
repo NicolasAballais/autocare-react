@@ -1,182 +1,186 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { registrarUsuario } from '../data/usuarios';
+
 export default function Register() {
-    return(
-        <div class="row justify-content-center p-5">
-            <div class="col-md-7 col-lg-6">
-                <div class="card shadow">
-                    <div class="card-body p-5">
-                        <h2 class="text-center mb-4">
-                            Registro de Usuario
-                        </h2>
-                        <form id="registerForm" novalidate>
-                            <div class="mb-3">
-                                <label for="runReg" class="form-label">
-                                    RUN
-                                </label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="runReg"
-                                    placeholder="Ej: 19011022K"
-                                    minlength="7"
-                                    maxlength="9"/>
-                                <div
-                                    id="runRegError"
-                                    class="text-danger mt-1 fw-bold">
+
+    const navigate = useNavigate();
+
+    const [nombre, setNombre] = useState('');
+    const [apellido, setApellido] = useState('');
+    const [correo, setCorreo] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmarPassword, setConfirmarPassword] = useState('');
+    const [mensaje, setMensaje] = useState('');
+
+    function manejarRegistro(evento) {
+
+        evento.preventDefault();
+
+        setMensaje('');
+
+        if (password !== confirmarPassword) {
+            setMensaje('Las contraseñas no coinciden.');
+            return;
+        }
+
+        const resultado = registrarUsuario({
+            nombre,
+            apellido,
+            correo,
+            password
+        });
+
+        if (!resultado.exito) {
+            setMensaje(resultado.mensaje);
+            return;
+        }
+
+        navigate('/login');
+    }
+
+    return (
+        <main className="container my-5">
+
+            <div className="row justify-content-center">
+
+                <div className="col-md-7 col-lg-6">
+
+                    <div className="card shadow-sm">
+
+                        <div className="card-body p-4">
+
+                            <h1 className="mb-1">
+                                Crear cuenta
+                            </h1>
+
+                            <p className="text-muted mb-4">
+                                Regístrate para gestionar tus compras en AutoCarePro.
+                            </p>
+
+                            {mensaje && (
+
+                                <div className="alert alert-danger">
+                                    {mensaje}
                                 </div>
-                                <div class="form-text">
-                                    Ingresa el RUN sin puntos ni guion.
+
+                            )}
+
+                            <form onSubmit={manejarRegistro}>
+
+                                <div className="row">
+
+                                    <div className="col-md-6 mb-3">
+
+                                        <label className="form-label">
+                                            Nombre
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={nombre}
+                                            onChange={(e) => setNombre(e.target.value)}
+                                            required
+                                        />
+
+                                    </div>
+
+                                    <div className="col-md-6 mb-3">
+
+                                        <label className="form-label">
+                                            Apellido
+                                        </label>
+
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={apellido}
+                                            onChange={(e) => setApellido(e.target.value)}
+                                            required
+                                        />
+
+                                    </div>
+
                                 </div>
+
+                                <div className="mb-3">
+
+                                    <label className="form-label">
+                                        Correo electrónico
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        value={correo}
+                                        onChange={(e) => setCorreo(e.target.value)}
+                                        required
+                                    />
+
+                                </div>
+
+                                <div className="mb-3">
+
+                                    <label className="form-label">
+                                        Contraseña
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+
+                                </div>
+
+                                <div className="mb-3">
+
+                                    <label className="form-label">
+                                        Confirmar contraseña
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        value={confirmarPassword}
+                                        onChange={(e) => setConfirmarPassword(e.target.value)}
+                                        required
+                                    />
+
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="btn btn-danger w-100"
+                                >
+                                    Crear cuenta
+                                </button>
+
+                            </form>
+
+                            <div className="text-center mt-3">
+
+                                <span className="text-muted">
+                                    ¿Ya tienes una cuenta?{' '}
+                                </span>
+
+                                <Link to="/login">
+                                    Iniciar sesión
+                                </Link>
+
                             </div>
-                            <div class="mb-3">
-                                <label for="nombreReg" class="form-label">
-                                    Nombre
-                                </label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="nombreReg"
-                                    placeholder="Ej: Juan"
-                                    maxlength="50"
-                                    autocomplete="given-name"/>
-                                <div
-                                    id="nombreRegError"
-                                    class="text-danger mt-1 fw-bold"
-                                    >
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="apellidoReg" class="form-label">
-                                    Apellidos
-                                </label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="apellidoReg"
-                                    placeholder="Ej: Pérez González"
-                                    maxlength="100"
-                                    autocomplete="family-name"/>
-                                <div
-                                    id="apellidoRegError"
-                                    class="text-danger mt-1 fw-bold"
-                                    >
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="emailReg" class="form-label">
-                                    Correo Electrónico
-                                </label>
-                                <input
-                                    type="email"
-                                    class="form-control"
-                                    id="emailReg"
-                                    placeholder="ejemplo@duoc.cl"
-                                    maxlength="100"
-                                    autocomplete="email"/>
-                                <div
-                                    id="emailRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                                <div class="form-text">
-                                    Se permiten correos @duoc.cl,
-                                    @profesor.duoc.cl y @gmail.com.
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fechaNacimientoReg" class="form-label">
-                                    Fecha de Nacimiento
-                                    <span class="text-muted">(Opcional)</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    class="form-control"
-                                    id="fechaNacimientoReg"
-                                    autocomplete="bday"/>
-                                <div
-                                    id="fechaNacimientoRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="regionReg" class="form-label">
-                                    Región
-                                </label>
-                                <select
-                                    class="form-select"
-                                    id="regionReg"
-                                    autocomplete="address-level1">
-                                    <option value="">
-                                        Seleccione una región
-                                    </option>
-                                </select>
-                                <div
-                                    id="regionRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="comunaReg" class="form-label">
-                                    Comuna
-                                </label>
-                                <select
-                                    class="form-select"
-                                    id="comunaReg"
-                                    autocomplete="address-level2"
-                                    disabled>
-                                    <option value="">
-                                        Seleccione primero una región
-                                    </option>
-                                </select>
-                                <div
-                                    id="comunaRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="direccionReg" class="form-label">
-                                    Dirección
-                                </label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="direccionReg"
-                                    placeholder="Ej: Av. Vicuña Mackenna 1234"
-                                    maxlength="300"
-                                    autocomplete="street-address"/>
-                                <div
-                                    id="direccionRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <label for="passReg" class="form-label">
-                                    Contraseña
-                                </label>
-                                <input
-                                    type="password"
-                                    class="form-control"
-                                    id="passReg"
-                                    placeholder="4 a 10 caracteres"
-                                    minlength="4"
-                                    maxlength="10"
-                                    autocomplete="new-password"/>
-                                <div
-                                    id="passRegError"
-                                    class="text-danger mt-1 fw-bold">
-                                </div>
-                                <div class="form-text">
-                                    La contraseña debe contener entre
-                                    4 y 10 caracteres.
-                                </div>
-                            </div>
-                            <button
-                                type="submit"
-                                class="btn btn-danger w-100 btn-lg">
-                                Registrar
-                            </button>
-                        </form>
+
+                        </div>
+
                     </div>
+
                 </div>
+
             </div>
-        </div>
+
+        </main>
     );
 }
