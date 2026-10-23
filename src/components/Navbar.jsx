@@ -105,13 +105,13 @@ export default function Navbar() {
 
                         <div className="d-flex align-items-center gap-2 ms-auto">
 
-                            <span className="text-white">
-
+                            <Link
+                                to="/perfil"
+                                className="text-white text-decoration-none"
+                            >
                                 <i className="bi bi-person-circle fs-4 me-1"></i>
-
                                 {sesion.nombre}
-
-                            </span>
+                            </Link>
 
                             <button
                                 type="button"

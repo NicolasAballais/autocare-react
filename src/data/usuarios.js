@@ -111,3 +111,42 @@ export function cerrarSesion() {
 
     localStorage.removeItem(CLAVE_SESION);
 }
+
+
+export function actualizarUsuarioPerfil(id, datosActualizados) {
+
+    const usuarios = obtenerUsuarios();
+
+    const usuariosActualizados = usuarios.map((usuario) => {
+
+        if (usuario.id !== Number(id)) {
+            return usuario;
+        }
+
+        return {
+            ...usuario,
+            ...datosActualizados
+        };
+    });
+
+    localStorage.setItem(
+        CLAVE_USUARIOS,
+        JSON.stringify(usuariosActualizados)
+    );
+
+    const usuarioActualizado = usuariosActualizados.find(
+        (usuario) => usuario.id === Number(id)
+    );
+
+    const sesion = obtenerSesion();
+
+    if (sesion && sesion.id === Number(id)) {
+
+        localStorage.setItem(
+            CLAVE_SESION,
+            JSON.stringify(usuarioActualizado)
+        );
+    }
+
+    return usuarioActualizado;
+}

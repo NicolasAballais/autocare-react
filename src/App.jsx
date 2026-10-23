@@ -34,6 +34,8 @@ import AdminIncidencias from './pages/AdminIncidencias';
 import NuevaIncidencia from './pages/NuevaIncidencia';
 import Incidencias from './pages/Incidencias';
 
+import Perfil from './pages/Perfil';
+
 function App() {
 
     return (
@@ -74,6 +76,7 @@ function App() {
                     <Route path="/admin/ordenes" element={<RutaAdmin><AdminOrdenes /></RutaAdmin>} />
                     <Route path="/admin/notificaciones" element={<RutaAdmin><AdminNotificaciones /></RutaAdmin>} />
                     <Route path="/admin/incidencias" element={<RutaAdmin><AdminIncidencias /></RutaAdmin>} />
+                    <Route path="/perfil" element={<Perfil />} />
 
                 </Routes>
 

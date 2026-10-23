@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCarrito } from '../context/CarritoContext';
+import { obtenerSesion } from '../data/usuarios';
 
 export default function Checkout() {
 
@@ -12,12 +13,16 @@ export default function Checkout() {
 
     const navigate = useNavigate();
 
+    const sesion = obtenerSesion();
+
     const [datosCliente, setDatosCliente] = useState({
-        nombre: '',
-        correo: '',
-        telefono: '',
-        direccion: '',
-        comuna: ''
+        nombre: sesion
+            ? `${sesion.nombre || ''} ${sesion.apellido || ''}`.trim()
+            : '',
+        correo: sesion?.correo || '',
+        telefono: sesion?.telefono || '',
+        direccion: sesion?.direccion || '',
+        comuna: sesion?.comuna || ''
     });
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -67,6 +72,18 @@ export default function Checkout() {
                                 <h4 className="mb-4">
                                     Datos de entrega
                                 </h4>
+
+                                {sesion && (
+
+                                    <div className="alert alert-info">
+
+                                        <i className="bi bi-person-check me-2"></i>
+
+                                        Los datos fueron cargados automáticamente desde tu perfil.
+
+                                    </div>
+
+                                )}
 
                                 <div className="row g-3">
 
