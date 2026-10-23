@@ -35,6 +35,9 @@ import NuevaIncidencia from './pages/NuevaIncidencia';
 import Incidencias from './pages/Incidencias';
 
 import Perfil from './pages/Perfil';
+import Categorias from './pages/Categorias';
+
+import AdminCategorias from './pages/AdminCategorias';
 
 function App() {
 
@@ -77,6 +80,8 @@ function App() {
                     <Route path="/admin/notificaciones" element={<RutaAdmin><AdminNotificaciones /></RutaAdmin>} />
                     <Route path="/admin/incidencias" element={<RutaAdmin><AdminIncidencias /></RutaAdmin>} />
                     <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/categorias" element={<Categorias />} />
+                    <Route path="/admin/categorias" element={<RutaAdmin><AdminCategorias /></RutaAdmin>} />
 
                 </Routes>
 

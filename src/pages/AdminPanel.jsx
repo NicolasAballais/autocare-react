@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
+
 import { obtenerProductos } from '../data/productos';
 import { obtenerOrdenes } from '../data/ordenes';
 import { obtenerIncidencias } from '../data/incidencias';
+import { obtenerCategorias } from '../data/categorias';
 
 export default function AdminPanel() {
 
     const productos = obtenerProductos();
     const ordenes = obtenerOrdenes();
     const incidencias = obtenerIncidencias();
+    const categorias = obtenerCategorias();
 
     const productosStockCritico = productos.filter(
         (producto) =>
@@ -43,7 +46,7 @@ export default function AdminPanel() {
 
                 {/* PRODUCTOS */}
 
-                <div className="col-md-6 col-lg-3">
+                <div className="col-md-6 col-lg">
 
                     <div className="card shadow-sm h-100">
 
@@ -80,9 +83,48 @@ export default function AdminPanel() {
 
                 </div>
 
+                {/* CATEGORÍAS */}
+
+                <div className="col-md-6 col-lg">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-grid fs-2 text-secondary"></i>
+
+                                <span className="badge text-bg-secondary">
+                                    {categorias.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Categorías
+                            </h4>
+
+                            <p className="text-muted">
+                                Crear, editar y organizar categorías.
+                            </p>
+
+                            <Link
+                                to="/admin/categorias"
+                                className="btn btn-outline-secondary"
+                            >
+                                Administrar categorías
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
                 {/* ÓRDENES */}
 
-                <div className="col-md-6 col-lg-3">
+                <div className="col-md-6 col-lg">
 
                     <div className="card shadow-sm h-100">
 
@@ -121,7 +163,7 @@ export default function AdminPanel() {
 
                 {/* NOTIFICACIONES */}
 
-                <div className="col-md-6 col-lg-3">
+                <div className="col-md-6 col-lg">
 
                     <div className="card shadow-sm h-100">
 
@@ -160,7 +202,7 @@ export default function AdminPanel() {
 
                 {/* INCIDENCIAS */}
 
-                <div className="col-md-6 col-lg-3">
+                <div className="col-md-6 col-lg">
 
                     <div className="card shadow-sm h-100">
 

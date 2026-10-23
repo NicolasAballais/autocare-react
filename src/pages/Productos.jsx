@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerProductos } from '../data/productos';
 import {
     Link,
     useSearchParams
 } from 'react-router-dom';
+
+import { obtenerProductos } from '../data/productos';
+import { obtenerCategorias } from '../data/categorias';
 import { useCarrito } from '../context/CarritoContext';
 
 function ProductoCard({ producto }) {
+
     const { agregarProducto } = useCarrito();
+
     const precioFormateado = new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP',
@@ -20,6 +24,7 @@ function ProductoCard({ producto }) {
 
     return (
         <div className="col-md-6 col-xl-4">
+
             <div className="card h-100 shadow-sm">
 
                 <img
@@ -55,52 +60,70 @@ function ProductoCard({ producto }) {
                     </p>
 
                     {stockCritico && (
+
                         <div className="alert alert-warning py-1 px-2 mt-2 mb-0">
                             Stock crítico
                         </div>
+
                     )}
 
                     {producto.stock === 0 && (
+
                         <div className="alert alert-danger py-1 px-2 mt-2 mb-0">
                             Producto agotado
                         </div>
+
                     )}
 
                     <div className="d-flex gap-2 mt-auto pt-3">
 
-                    <Link
-                        to={`/productos/${producto.id}`}
-                        className="btn btn-outline-dark btn-sm flex-grow-1"
-                    >
-                        Ver detalle
-                    </Link>
+                        <Link
+                            to={`/productos/${producto.id}`}
+                            className="btn btn-outline-dark btn-sm flex-grow-1"
+                        >
+                            Ver detalle
+                        </Link>
 
-                    <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        disabled={producto.stock === 0}
-                        onClick={() => agregarProducto(producto)}
-                    >
-                        <i className="bi bi-cart-plus"></i>
-                    </button>
+                        <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            disabled={producto.stock === 0}
+                            onClick={() =>
+                                agregarProducto(producto)
+                            }
+                        >
+                            <i className="bi bi-cart-plus"></i>
+                        </button>
+
+                    </div>
 
                 </div>
 
-                </div>
             </div>
+
         </div>
     );
 }
 
 export default function Productos() {
 
-    const [productos] = useState(() => obtenerProductos());
+    const [productos] = useState(() =>
+        obtenerProductos()
+    );
 
-    const [searchParams, setSearchParams] = useSearchParams();
+    const categorias = obtenerCategorias();
 
-    const busquedaURL = searchParams.get('buscar') || '';
-    const categoriaSeleccionada =
-        searchParams.get('categoria') || '';
+    const [searchParams, setSearchParams] =
+        useSearchParams();
+
+    const busquedaURL =
+        searchParams.get('buscar') || '';
+
+    const categoriasSeleccionadas = useMemo(
+        () =>
+            searchParams.getAll('categoria'),
+        [searchParams]
+    );
 
     const [busqueda, setBusqueda] =
         useState(busquedaURL);
@@ -112,17 +135,8 @@ export default function Productos() {
         setBusqueda(busquedaURL);
     }, [busquedaURL]);
 
-    const categorias = useMemo(() => {
-        return [
-            ...new Set(
-                productos.map(
-                    (producto) => producto.categoria
-                )
-            )
-        ];
-    }, [productos]);
-
     const manejarBusqueda = (event) => {
+
         const valor = event.target.value;
 
         setBusqueda(valor);
@@ -131,9 +145,17 @@ export default function Productos() {
             new URLSearchParams(searchParams);
 
         if (valor.trim()) {
-            nuevosParametros.set('buscar', valor);
+
+            nuevosParametros.set(
+                'buscar',
+                valor
+            );
+
         } else {
-            nuevosParametros.delete('buscar');
+
+            nuevosParametros.delete(
+                'buscar'
+            );
         }
 
         setSearchParams(
@@ -143,18 +165,55 @@ export default function Productos() {
     };
 
     const seleccionarCategoria = (categoria) => {
+
         const nuevosParametros =
             new URLSearchParams(searchParams);
 
-        nuevosParametros.set(
-            'categoria',
-            categoria
+        const categoriasActuales =
+            searchParams.getAll('categoria');
+
+        let nuevasCategorias;
+
+        if (
+            categoriasActuales.includes(categoria)
+        ) {
+
+            nuevasCategorias =
+                categoriasActuales.filter(
+                    (item) =>
+                        item !== categoria
+                );
+
+        } else {
+
+            nuevasCategorias = [
+                ...categoriasActuales,
+                categoria
+            ];
+        }
+
+        nuevosParametros.delete(
+            'categoria'
         );
 
-        setSearchParams(nuevosParametros);
+        nuevasCategorias.forEach(
+            (item) => {
+
+                nuevosParametros.append(
+                    'categoria',
+                    item
+                );
+
+            }
+        );
+
+        setSearchParams(
+            nuevosParametros
+        );
     };
 
     const limpiarFiltros = () => {
+
         setBusqueda('');
         setOrden('original');
         setSearchParams({});
@@ -168,19 +227,27 @@ export default function Productos() {
             busqueda.trim().toLowerCase();
 
         if (texto) {
+
             resultado = resultado.filter(
                 (producto) =>
+
                     producto.nombre
                         .toLowerCase()
-                        .includes(texto) ||
+                        .includes(texto)
+
+                    ||
 
                     producto.descripcion
                         .toLowerCase()
-                        .includes(texto) ||
+                        .includes(texto)
+
+                    ||
 
                     producto.categoria
                         .toLowerCase()
-                        .includes(texto) ||
+                        .includes(texto)
+
+                    ||
 
                     producto.codigo
                         .toLowerCase()
@@ -188,33 +255,47 @@ export default function Productos() {
             );
         }
 
-        if (categoriaSeleccionada) {
+        if (
+            categoriasSeleccionadas.length > 0
+        ) {
+
             resultado = resultado.filter(
                 (producto) =>
-                    producto.categoria ===
-                    categoriaSeleccionada
+                    categoriasSeleccionadas.includes(
+                        producto.categoria
+                    )
             );
         }
 
         switch (orden) {
 
             case 'precio-asc':
+
                 resultado.sort(
-                    (a, b) => a.precio - b.precio
+                    (a, b) =>
+                        a.precio - b.precio
                 );
+
                 break;
 
             case 'precio-desc':
+
                 resultado.sort(
-                    (a, b) => b.precio - a.precio
+                    (a, b) =>
+                        b.precio - a.precio
                 );
+
                 break;
 
             case 'nombre-asc':
+
                 resultado.sort(
                     (a, b) =>
-                        a.nombre.localeCompare(b.nombre)
+                        a.nombre.localeCompare(
+                            b.nombre
+                        )
                 );
+
                 break;
 
             default:
@@ -226,7 +307,7 @@ export default function Productos() {
     }, [
         productos,
         busqueda,
-        categoriaSeleccionada,
+        categoriasSeleccionadas,
         orden
     ]);
 
@@ -240,8 +321,7 @@ export default function Productos() {
                 </h1>
 
                 <p className="text-muted">
-                    {productosFiltrados.length}
-                    {' '}
+                    {productosFiltrados.length}{' '}
                     productos disponibles
                 </p>
 
@@ -256,8 +336,11 @@ export default function Productos() {
                         <div className="card-body">
 
                             <h5 className="mb-3">
+
                                 <i className="bi bi-funnel me-2"></i>
+
                                 Filtros
+
                             </h5>
 
                             <p className="fw-bold mb-2">
@@ -267,26 +350,34 @@ export default function Productos() {
                             <div className="d-grid gap-2">
 
                                 {categorias.map(
-                                    (categoria) => (
+                                    (categoria) => {
 
-                                        <button
-                                            key={categoria}
-                                            type="button"
-                                            className={
-                                                categoriaSeleccionada === categoria
-                                                    ? 'btn btn-danger btn-sm'
-                                                    : 'btn btn-outline-secondary btn-sm'
-                                            }
-                                            onClick={() =>
-                                                seleccionarCategoria(
-                                                    categoria
-                                                )
-                                            }
-                                        >
-                                            {categoria}
-                                        </button>
+                                        const seleccionada =
+                                            categoriasSeleccionadas.includes(
+                                                categoria.nombre
+                                            );
 
-                                    )
+                                        return (
+
+                                            <button
+                                                key={categoria.id}
+                                                type="button"
+                                                className={
+                                                    seleccionada
+                                                        ? 'btn btn-danger btn-sm'
+                                                        : 'btn btn-outline-secondary btn-sm'
+                                                }
+                                                onClick={() =>
+                                                    seleccionarCategoria(
+                                                        categoria.nombre
+                                                    )
+                                                }
+                                            >
+                                                {categoria.nombre}
+                                            </button>
+
+                                        );
+                                    }
                                 )}
 
                             </div>
@@ -335,7 +426,9 @@ export default function Productos() {
                                 className="form-select"
                                 value={orden}
                                 onChange={(event) =>
-                                    setOrden(event.target.value)
+                                    setOrden(
+                                        event.target.value
+                                    )
                                 }
                             >
 

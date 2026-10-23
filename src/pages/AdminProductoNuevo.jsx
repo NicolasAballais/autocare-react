@@ -5,9 +5,11 @@ import {
     guardarProductos
 } from '../data/productos';
 
+import { obtenerCategorias } from '../data/categorias';
 export default function AdminProductoNuevo() {
 
     const navigate = useNavigate();
+    const categorias = obtenerCategorias();
 
     const [formulario, setFormulario] = useState({
         codigo: '',
@@ -232,22 +234,14 @@ export default function AdminProductoNuevo() {
                                         Selecciona una categoría
                                     </option>
 
-                                    <option value="Aceites y Filtros">
-                                        Aceites y Filtros
-                                    </option>
-
-                                    <option value="Detailing y Limpieza">
-                                        Detailing y Limpieza
-                                    </option>
-
-                                    <option value="Ampolletas y Electricidad">
-                                        Ampolletas y Electricidad
-                                    </option>
-
-                                    <option value="Accesorios">
-                                        Accesorios
-                                    </option>
-
+                                    {categorias.map((categoria) => (
+                                        <option
+                                            key={categoria.id}
+                                            value={categoria.nombre}
+                                        >
+                                            {categoria.nombre}
+                                        </option>
+                                    ))}
                                 </select>
 
                             </div>

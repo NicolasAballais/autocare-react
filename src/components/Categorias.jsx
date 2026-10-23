@@ -1,48 +1,60 @@
 import { Link } from 'react-router-dom';
+import { obtenerCategorias } from '../data/categorias';
 
-function CategoriaCard({ nombre, icono, categoria }) {
+function obtenerIcono(nombreCategoria) {
+
+    switch (nombreCategoria) {
+
+        case 'Aceites y Filtros':
+            return 'bi-funnel-fill';
+
+        case 'Detailing y Limpieza':
+            return 'bi-droplet-half';
+
+        case 'Ampolletas y Electricidad':
+            return 'bi-lightning-charge-fill';
+
+        case 'Accesorios':
+            return 'bi-car-front-fill';
+
+        default:
+            return 'bi-grid-fill';
+    }
+}
+
+function CategoriaCard({ categoria }) {
+
+    const icono = obtenerIcono(categoria.nombre);
+
     return (
-        <div className="col-md-3">
+        <div className="col-md-6 col-lg-3">
+
             <Link
-                to={`/productos?categoria=${encodeURIComponent(categoria)}`}
+                to={`/categorias?categoria=${encodeURIComponent(categoria.nombre)}`}
                 className="text-decoration-none text-dark"
             >
+
                 <div className="p-4 border rounded shadow-sm bg-light h-100">
-                    <i className={`bi ${icono} fs-1 text-danger`}></i>
+
+                    <i
+                        className={`bi ${icono} fs-1 text-danger`}
+                    ></i>
 
                     <h3 className="h5 mt-3">
-                        {nombre}
+                        {categoria.nombre}
                     </h3>
+
                 </div>
+
             </Link>
+
         </div>
     );
 }
 
 export default function Categorias() {
 
-    const categorias = [
-        {
-            nombre: 'Aceites & Filtros',
-            categoria: 'Aceites y Filtros',
-            icono: 'bi-funnel-fill'
-        },
-        {
-            nombre: 'Detailing & Limpieza',
-            categoria: 'Detailing y Limpieza',
-            icono: 'bi-droplet-half'
-        },
-        {
-            nombre: 'Ampolletas & Electricidad',
-            categoria: 'Ampolletas y Electricidad',
-            icono: 'bi-lightning-charge-fill'
-        },
-        {
-            nombre: 'Accesorios',
-            categoria: 'Accesorios',
-            icono: 'bi-car-front-fill'
-        }
-    ];
+    const categorias = obtenerCategorias();
 
     return (
         <section className="container my-5 text-center">
@@ -51,18 +63,28 @@ export default function Categorias() {
                 Categorías Principales
             </h2>
 
-            <div className="row g-4">
+            {categorias.length === 0 ? (
 
-                {categorias.map((categoria) => (
-                    <CategoriaCard
-                        key={categoria.categoria}
-                        nombre={categoria.nombre}
-                        categoria={categoria.categoria}
-                        icono={categoria.icono}
-                    />
-                ))}
+                <div className="alert alert-info">
+                    No existen categorías disponibles.
+                </div>
 
-            </div>
+            ) : (
+
+                <div className="row g-4">
+
+                    {categorias.map((categoria) => (
+
+                        <CategoriaCard
+                            key={categoria.id}
+                            categoria={categoria}
+                        />
+
+                    ))}
+
+                </div>
+
+            )}
 
         </section>
     );

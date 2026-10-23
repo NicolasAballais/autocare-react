@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+
 import {
     obtenerProductos,
     guardarProductos
 } from '../data/productos';
+
+import { obtenerCategorias } from '../data/categorias';
 
 export default function AdminProductoEditar() {
 
@@ -11,6 +14,7 @@ export default function AdminProductoEditar() {
     const navigate = useNavigate();
 
     const productos = obtenerProductos();
+    const categorias = obtenerCategorias();
 
     const productoEncontrado = productos.find(
         (producto) => producto.id === Number(id)
@@ -264,21 +268,21 @@ export default function AdminProductoEditar() {
                                     onChange={manejarCambio}
                                     required
                                 >
-                                    <option value="Aceites y Filtros">
-                                        Aceites y Filtros
+
+                                    <option value="">
+                                        Selecciona una categoría
                                     </option>
 
-                                    <option value="Detailing y Limpieza">
-                                        Detailing y Limpieza
-                                    </option>
+                                    {categorias.map((categoria) => (
 
-                                    <option value="Ampolletas y Electricidad">
-                                        Ampolletas y Electricidad
-                                    </option>
+                                        <option
+                                            key={categoria.id}
+                                            value={categoria.nombre}
+                                        >
+                                            {categoria.nombre}
+                                        </option>
 
-                                    <option value="Accesorios">
-                                        Accesorios
-                                    </option>
+                                    ))}
 
                                 </select>
 
