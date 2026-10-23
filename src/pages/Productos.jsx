@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { obtenerProductos } from '../data/productos';
+import {
+    Link,
+    useSearchParams
+} from 'react-router-dom';
+import { useCarrito } from '../context/CarritoContext';
 
 function ProductoCard({ producto }) {
+    const { agregarProducto } = useCarrito();
     const precioFormateado = new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP',
@@ -60,6 +65,26 @@ function ProductoCard({ producto }) {
                             Producto agotado
                         </div>
                     )}
+
+                    <div className="d-flex gap-2 mt-auto pt-3">
+
+                    <Link
+                        to={`/productos/${producto.id}`}
+                        className="btn btn-outline-dark btn-sm flex-grow-1"
+                    >
+                        Ver detalle
+                    </Link>
+
+                    <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        disabled={producto.stock === 0}
+                        onClick={() => agregarProducto(producto)}
+                    >
+                        <i className="bi bi-cart-plus"></i>
+                    </button>
+
+                </div>
 
                 </div>
             </div>

@@ -10,6 +10,12 @@ import Nosotros from './pages/Nosotros'
 import Register from './pages/Register'
 import Productos from './pages/Productos'
 import Contacto from './pages/Contacto'
+import DetalleProducto from './pages/DetalleProducto';
+import Carrito from './pages/Carrito';
+import Checkout from './pages/Checkout';
+import Pago from './pages/Pago';
+import CompraExitosa from './pages/CompraExitosa';
+import PagoError from './pages/PagoError';
 
 function App() {
 return(
@@ -24,6 +30,15 @@ return(
           <Route path="/register" element={<Register />} />
           <Route path="/productos" element={<Productos />} />
           <Route path="/contacto" element={<Contacto />} />
+          <Route path="/productos/:id" element={<DetalleProducto />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/pago" element={<Pago />} />
+          <Route path="/compra-exitosa" element={<CompraExitosa />} />
+<Route
+    path="/pago-error"
+    element={<PagoError />}
+/>
         </Routes>
         <Footer />
       </div>

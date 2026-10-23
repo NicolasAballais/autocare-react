@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useCarrito } from '../context/CarritoContext';
 
 export default function Navbar() {
+    const { cantidadTotal } = useCarrito();
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
             <div className="container">
@@ -77,7 +79,7 @@ export default function Navbar() {
                         <i className="bi bi-cart3 fs-4"></i>
 
                         <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
-                            0
+                            {cantidadTotal}
                         </span>
                     </Link>
 
