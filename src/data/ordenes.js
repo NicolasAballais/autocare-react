@@ -2,14 +2,11 @@ const CLAVE_ORDENES = 'ordenesAutoCare';
 
 export function obtenerOrdenes() {
 
-    const ordenesGuardadas =
-        localStorage.getItem(CLAVE_ORDENES);
+    const datos = localStorage.getItem(CLAVE_ORDENES);
 
-    if (!ordenesGuardadas) {
-        return [];
-    }
-
-    return JSON.parse(ordenesGuardadas);
+    return datos
+        ? JSON.parse(datos)
+        : [];
 }
 
 export function guardarOrden(orden) {
@@ -34,4 +31,26 @@ export function guardarOrden(orden) {
     );
 
     return nuevaOrden;
+}
+
+export function actualizarEstadoOrden(id, nuevoEstado) {
+
+    const ordenes = obtenerOrdenes();
+
+    const ordenesActualizadas = ordenes.map((orden) => {
+
+        if (orden.id !== Number(id)) {
+            return orden;
+        }
+
+        return {
+            ...orden,
+            estado: nuevoEstado
+        };
+    });
+
+    localStorage.setItem(
+        CLAVE_ORDENES,
+        JSON.stringify(ordenesActualizadas)
+    );
 }

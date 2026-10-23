@@ -19,6 +19,11 @@ import PagoError from './pages/PagoError';
 import Ordenes from './pages/Ordenes';
 import DetalleOrden from './pages/DetalleOrden';
 import Boleta from './pages/Boleta';
+import AdminProductos from './pages/AdminProductos';
+import AdminProductoNuevo from './pages/AdminProductoNuevo';
+import AdminProductoEditar from './pages/AdminProductoEditar';
+import AdminOrdenes from './pages/AdminOrdenes';
+
 
 function App() {
 return(
@@ -41,6 +46,10 @@ return(
           <Route path="/ordenes" element={<Ordenes />} />
           <Route path="/ordenes/:id" element={<DetalleOrden />} />
           <Route path="/ordenes/:id/boleta" element={<Boleta />} />
+          <Route path="/admin/productos" element={<AdminProductos />} />
+          <Route path="/admin/productos/nuevo" element={<AdminProductoNuevo />} />
+          <Route path="/admin/productos/editar/:id" element={<AdminProductoEditar />} />
+          <Route path="/admin/ordenes" element={<AdminOrdenes />} />
 <Route
     path="/pago-error"
     element={<PagoError />}
