@@ -1,14 +1,27 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCarrito } from '../context/CarritoContext';
+import {
+    obtenerProductos,
+    guardarProductos
+} from '../data/productos';
+import { guardarOrden } from '../data/ordenes';
 
 export default function Pago() {
 
-    const { total } = useCarrito();
+    const {
+        carrito,
+        total,
+        vaciarCarrito
+    } = useCarrito();
 
     const [metodoPago, setMetodoPago] = useState('');
 
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const datosCliente =
+        location.state?.datosCliente || {};
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
@@ -16,18 +29,68 @@ export default function Pago() {
         maximumFractionDigits: 0
     });
 
+    const descontarStock = () => {
+
+        const productos = obtenerProductos();
+
+        const productosActualizados = productos.map((producto) => {
+
+            const productoCarrito = carrito.find(
+                (item) => item.id === producto.id
+            );
+
+            if (!productoCarrito) {
+                return producto;
+            }
+
+            return {
+                ...producto,
+                stock: Math.max(
+                    0,
+                    producto.stock - productoCarrito.cantidad
+                )
+            };
+        });
+
+        guardarProductos(productosActualizados);
+    };
+
+    const crearOrden = () => {
+
+        const productosOrden = carrito.map((item) => ({
+            id: item.id,
+            nombre: item.nombre,
+            precio: item.precio,
+            cantidad: item.cantidad,
+            subtotal: item.precio * item.cantidad
+        }));
+
+        guardarOrden({
+            cliente: datosCliente,
+            productos: productosOrden,
+            total,
+            metodoPago
+        });
+    };
+
     const procesarPago = () => {
 
         if (!metodoPago) {
             return;
         }
 
-        // Simulación para probar ambos resultados del flujo.
+        // Simulación de pago rechazado
         if (metodoPago === 'credito') {
             navigate('/pago-error');
-        } else {
-            navigate('/compra-exitosa');
+            return;
         }
+
+        // Compra exitosa
+        crearOrden();
+        descontarStock();
+        vaciarCarrito();
+
+        navigate('/compra-exitosa');
     };
 
     return (

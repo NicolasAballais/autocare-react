@@ -16,6 +16,9 @@ import Checkout from './pages/Checkout';
 import Pago from './pages/Pago';
 import CompraExitosa from './pages/CompraExitosa';
 import PagoError from './pages/PagoError';
+import Ordenes from './pages/Ordenes';
+import DetalleOrden from './pages/DetalleOrden';
+import Boleta from './pages/Boleta';
 
 function App() {
 return(
@@ -35,6 +38,9 @@ return(
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/pago" element={<Pago />} />
           <Route path="/compra-exitosa" element={<CompraExitosa />} />
+          <Route path="/ordenes" element={<Ordenes />} />
+          <Route path="/ordenes/:id" element={<DetalleOrden />} />
+          <Route path="/ordenes/:id/boleta" element={<Boleta />} />
 <Route
     path="/pago-error"
     element={<PagoError />}
