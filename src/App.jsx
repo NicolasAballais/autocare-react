@@ -23,6 +23,8 @@ import AdminProductos from './pages/AdminProductos';
 import AdminProductoNuevo from './pages/AdminProductoNuevo';
 import AdminProductoEditar from './pages/AdminProductoEditar';
 import AdminOrdenes from './pages/AdminOrdenes';
+import AdminNotificaciones from './pages/AdminNotificaciones';
+import AdminPanel from './pages/AdminPanel';
 
 
 function App() {
@@ -50,6 +52,8 @@ return(
           <Route path="/admin/productos/nuevo" element={<AdminProductoNuevo />} />
           <Route path="/admin/productos/editar/:id" element={<AdminProductoEditar />} />
           <Route path="/admin/ordenes" element={<AdminOrdenes />} />
+          <Route path="/admin/notificaciones" element={<AdminNotificaciones />} />
+          <Route path="/admin" element={<AdminPanel />} />
 <Route
     path="/pago-error"
     element={<PagoError />}

@@ -1,0 +1,158 @@
+import { Link } from 'react-router-dom';
+import { obtenerProductos } from '../data/productos';
+import { obtenerOrdenes } from '../data/ordenes';
+
+export default function AdminPanel() {
+
+    const productos = obtenerProductos();
+    const ordenes = obtenerOrdenes();
+
+    const productosStockCritico = productos.filter(
+        (producto) =>
+            producto.stock <= producto.stockCritico
+    );
+
+    const ordenesProcesando = ordenes.filter(
+        (orden) =>
+            orden.estado === 'Procesando'
+    );
+
+    return (
+        <main className="container my-5">
+
+            <div className="mb-4">
+
+                <h1 className="mb-1">
+                    Panel de Administración
+                </h1>
+
+                <p className="text-muted">
+                    Gestión general de AutoCarePro
+                </p>
+
+            </div>
+
+            <div className="row g-4">
+
+                {/* PRODUCTOS */}
+
+                <div className="col-md-4">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-box-seam fs-2 text-danger"></i>
+
+                                <span className="badge text-bg-secondary">
+                                    {productos.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Productos
+                            </h4>
+
+                            <p className="text-muted">
+                                Crear, editar, eliminar y controlar el stock.
+                            </p>
+
+                            <Link
+                                to="/admin/productos"
+                                className="btn btn-danger"
+                            >
+                                Administrar productos
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* ÓRDENES */}
+
+                <div className="col-md-4">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-receipt fs-2 text-primary"></i>
+
+                                <span className="badge text-bg-warning">
+                                    {ordenesProcesando.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Órdenes
+                            </h4>
+
+                            <p className="text-muted">
+                                Revisar compras y actualizar su estado.
+                            </p>
+
+                            <Link
+                                to="/admin/ordenes"
+                                className="btn btn-outline-primary"
+                            >
+                                Administrar órdenes
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* NOTIFICACIONES */}
+
+                <div className="col-md-4">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-bell fs-2 text-danger"></i>
+
+                                <span className="badge text-bg-danger">
+                                    {productosStockCritico.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Notificaciones
+                            </h4>
+
+                            <p className="text-muted">
+                                Revisar productos con stock crítico.
+                            </p>
+
+                            <Link
+                                to="/admin/notificaciones"
+                                className="btn btn-outline-danger"
+                            >
+                                Ver notificaciones
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    );
+}
