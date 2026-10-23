@@ -25,7 +25,9 @@ import AdminProductoEditar from './pages/AdminProductoEditar';
 import AdminOrdenes from './pages/AdminOrdenes';
 import AdminNotificaciones from './pages/AdminNotificaciones';
 import AdminPanel from './pages/AdminPanel';
-
+import NuevaIncidencia from './pages/NuevaIncidencia';
+import Incidencias from './pages/Incidencias';
+import AdminIncidencias from './pages/AdminIncidencias';
 
 function App() {
 return(
@@ -54,6 +56,10 @@ return(
           <Route path="/admin/ordenes" element={<AdminOrdenes />} />
           <Route path="/admin/notificaciones" element={<AdminNotificaciones />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/incidencias/nueva" element={<NuevaIncidencia />} />
+          <Route path="/incidencias" element={<Incidencias />} />
+          <Route path="/admin/incidencias" element={<AdminIncidencias />} />
+          
 <Route
     path="/pago-error"
     element={<PagoError />}

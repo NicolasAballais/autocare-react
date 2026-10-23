@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { obtenerProductos } from '../data/productos';
 import { obtenerOrdenes } from '../data/ordenes';
+import { obtenerIncidencias } from '../data/incidencias';
 
 export default function AdminPanel() {
 
     const productos = obtenerProductos();
     const ordenes = obtenerOrdenes();
+    const incidencias = obtenerIncidencias();
 
     const productosStockCritico = productos.filter(
         (producto) =>
@@ -15,6 +17,11 @@ export default function AdminPanel() {
     const ordenesProcesando = ordenes.filter(
         (orden) =>
             orden.estado === 'Procesando'
+    );
+
+    const incidenciasPendientes = incidencias.filter(
+        (incidencia) =>
+            incidencia.estado === 'Pendiente'
     );
 
     return (
@@ -36,7 +43,7 @@ export default function AdminPanel() {
 
                 {/* PRODUCTOS */}
 
-                <div className="col-md-4">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -75,7 +82,7 @@ export default function AdminPanel() {
 
                 {/* ÓRDENES */}
 
-                <div className="col-md-4">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -114,7 +121,7 @@ export default function AdminPanel() {
 
                 {/* NOTIFICACIONES */}
 
-                <div className="col-md-4">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -143,6 +150,45 @@ export default function AdminPanel() {
                                 className="btn btn-outline-danger"
                             >
                                 Ver notificaciones
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* INCIDENCIAS */}
+
+                <div className="col-md-6 col-lg-3">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-exclamation-circle fs-2 text-warning"></i>
+
+                                <span className="badge text-bg-warning">
+                                    {incidenciasPendientes.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Incidencias
+                            </h4>
+
+                            <p className="text-muted">
+                                Revisar y gestionar problemas reportados.
+                            </p>
+
+                            <Link
+                                to="/admin/incidencias"
+                                className="btn btn-outline-warning"
+                            >
+                                Administrar incidencias
                             </Link>
 
                         </div>
