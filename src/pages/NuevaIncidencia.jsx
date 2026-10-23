@@ -1,13 +1,27 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { obtenerOrdenes } from '../data/ordenes';
-import { guardarIncidencia } from '../data/incidencias';
+import { Link, useNavigate } from 'react-router-dom';
+
+import {
+    obtenerOrdenesUsuario
+} from '../data/ordenes';
+
+import {
+    guardarIncidencia
+} from '../data/incidencias';
+
+import {
+    obtenerSesion
+} from '../data/usuarios';
 
 export default function NuevaIncidencia() {
 
     const navigate = useNavigate();
 
-    const ordenes = obtenerOrdenes();
+    const sesion = obtenerSesion();
+
+    const ordenes = sesion
+        ? obtenerOrdenesUsuario(sesion)
+        : [];
 
     const [ordenId, setOrdenId] = useState('');
     const [asunto, setAsunto] = useState('');
@@ -23,7 +37,27 @@ export default function NuevaIncidencia() {
             descripcion
         });
 
-        navigate('/ordenes');
+        navigate('/incidencias');
+    }
+
+    if (!sesion) {
+
+        return (
+            <main className="container my-5">
+
+                <div className="alert alert-warning">
+                    Debes iniciar sesión para reportar una incidencia.
+                </div>
+
+                <Link
+                    to="/login"
+                    className="btn btn-danger"
+                >
+                    Iniciar sesión
+                </Link>
+
+            </main>
+        );
     }
 
     return (
@@ -45,82 +79,100 @@ export default function NuevaIncidencia() {
 
                 <div className="card-body">
 
-                    <form onSubmit={manejarEnvio}>
+                    {ordenes.length === 0 ? (
 
-                        <div className="mb-3">
+                        <div className="alert alert-info mb-0">
 
-                            <label className="form-label">
-                                Orden relacionada
-                            </label>
+                            No tienes órdenes disponibles para reportar una incidencia.
 
-                            <select
-                                className="form-select"
-                                value={ordenId}
-                                onChange={(e) => setOrdenId(e.target.value)}
-                                required
-                            >
+                        </div>
 
-                                <option value="">
-                                    Selecciona una orden
-                                </option>
+                    ) : (
 
-                                {ordenes.map((orden) => (
+                        <form onSubmit={manejarEnvio}>
 
-                                    <option
-                                        key={orden.id}
-                                        value={orden.id}
-                                    >
-                                        #{orden.id} - ${orden.total.toLocaleString('es-CL')}
+                            <div className="mb-3">
+
+                                <label className="form-label">
+                                    Orden relacionada
+                                </label>
+
+                                <select
+                                    className="form-select"
+                                    value={ordenId}
+                                    onChange={(e) =>
+                                        setOrdenId(e.target.value)
+                                    }
+                                    required
+                                >
+
+                                    <option value="">
+                                        Selecciona una orden
                                     </option>
 
-                                ))}
+                                    {ordenes.map((orden) => (
 
-                            </select>
+                                        <option
+                                            key={orden.id}
+                                            value={orden.id}
+                                        >
+                                            #{orden.id} - ${orden.total.toLocaleString('es-CL')}
+                                        </option>
 
-                        </div>
+                                    ))}
 
-                        <div className="mb-3">
+                                </select>
 
-                            <label className="form-label">
-                                Asunto
-                            </label>
+                            </div>
 
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={asunto}
-                                onChange={(e) => setAsunto(e.target.value)}
-                                placeholder="Ej: Producto recibido con problemas"
-                                required
-                            />
+                            <div className="mb-3">
 
-                        </div>
+                                <label className="form-label">
+                                    Asunto
+                                </label>
 
-                        <div className="mb-3">
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={asunto}
+                                    onChange={(e) =>
+                                        setAsunto(e.target.value)
+                                    }
+                                    placeholder="Ej: Producto recibido con problemas"
+                                    required
+                                />
 
-                            <label className="form-label">
-                                Descripción
-                            </label>
+                            </div>
 
-                            <textarea
-                                className="form-control"
-                                rows="5"
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value)}
-                                placeholder="Describe el problema con el mayor detalle posible."
-                                required
-                            ></textarea>
+                            <div className="mb-3">
 
-                        </div>
+                                <label className="form-label">
+                                    Descripción
+                                </label>
 
-                        <button
-                            type="submit"
-                            className="btn btn-danger"
-                        >
-                            Enviar incidencia
-                        </button>
+                                <textarea
+                                    className="form-control"
+                                    rows="5"
+                                    value={descripcion}
+                                    onChange={(e) =>
+                                        setDescripcion(e.target.value)
+                                    }
+                                    placeholder="Describe el problema con el mayor detalle posible."
+                                    required
+                                ></textarea>
 
-                    </form>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="btn btn-danger"
+                            >
+                                Enviar incidencia
+                            </button>
+
+                        </form>
+
+                    )}
 
                 </div>
 

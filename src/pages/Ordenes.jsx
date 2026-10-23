@@ -1,15 +1,52 @@
 import { Link } from 'react-router-dom';
-import { obtenerOrdenes } from '../data/ordenes';
+
+import {
+    obtenerOrdenesUsuario
+} from '../data/ordenes';
+
+import {
+    obtenerSesion
+} from '../data/usuarios';
 
 export default function Ordenes() {
 
-    const ordenes = obtenerOrdenes();
+    const sesion = obtenerSesion();
 
-    const formatoPrecio = new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        maximumFractionDigits: 0
-    });
+    const ordenes = sesion
+        ? obtenerOrdenesUsuario(sesion)
+        : [];
+
+    const formatoPrecio =
+        new Intl.NumberFormat(
+            'es-CL',
+            {
+                style: 'currency',
+                currency: 'CLP',
+                maximumFractionDigits: 0
+            }
+        );
+
+    if (!sesion) {
+
+        return (
+            <main className="container my-5">
+
+                <div className="alert alert-warning">
+
+                    Debes iniciar sesión para consultar tus órdenes.
+
+                </div>
+
+                <Link
+                    to="/login"
+                    className="btn btn-danger"
+                >
+                    Iniciar sesión
+                </Link>
+
+            </main>
+        );
+    }
 
     return (
         <main className="container my-5">
@@ -21,7 +58,7 @@ export default function Ordenes() {
             {ordenes.length === 0 ? (
 
                 <div className="alert alert-info">
-                    No hay órdenes registradas.
+                    No tienes órdenes registradas.
                 </div>
 
             ) : (
@@ -53,7 +90,13 @@ export default function Ordenes() {
 
                                         </div>
 
-                                        <span className="badge text-bg-warning">
+                                        <span
+                                            className={
+                                                orden.estado === 'Enviado'
+                                                    ? 'badge text-bg-primary'
+                                                    : 'badge text-bg-warning'
+                                            }
+                                        >
                                             {orden.estado}
                                         </span>
 
@@ -70,7 +113,11 @@ export default function Ordenes() {
                                     </p>
 
                                     <h5 className="text-danger">
-                                        Total: {formatoPrecio.format(orden.total)}
+                                        Total: {
+                                            formatoPrecio.format(
+                                                orden.total
+                                            )
+                                        }
                                     </h5>
 
                                     <Link

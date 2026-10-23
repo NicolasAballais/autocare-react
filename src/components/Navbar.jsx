@@ -72,6 +72,17 @@ export default function Navbar() {
                             </Link>
                         </li>
 
+                        {sesion?.rol === 'cliente' && (
+                            <li className="nav-item">
+                                <Link
+                                    className="nav-link"
+                                    to="/incidencias"
+                                >
+                                    Mis incidencias
+                                </Link>
+                            </li>
+                        )}
+
                         {sesion?.rol === 'admin' && (
 
                             <li className="nav-item">
