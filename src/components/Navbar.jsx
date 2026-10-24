@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { obtenerSesion, cerrarSesion } from '../data/usuarios';
+import { obtenerSesion, cerrarSesion } from '../services/usuariosService';
 import { useCarrito } from '../context/CarritoContext';
 
 export default function Navbar() {

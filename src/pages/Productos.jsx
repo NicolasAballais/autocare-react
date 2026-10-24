@@ -1,293 +1,126 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+
 import {
     Link,
     useSearchParams
 } from 'react-router-dom';
 
-import { obtenerProductos } from '../data/productos';
-import { obtenerCategorias } from '../data/categorias';
-import { useCarrito } from '../context/CarritoContext';
+import {
+    obtenerProductos,
+    obtenerDescuentoProducto,
+    obtenerPrecioFinalProducto,
+    productoEstaEnOferta
+} from '../services/productosService';
 
-function ProductoCard({ producto }) {
+import {
+    obtenerCategorias
+} from '../services/categoriasService';
 
-    const { agregarProducto } = useCarrito();
+import {
+    useCarrito
+} from '../context/CarritoContext';
 
-    const precioFormateado = new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        maximumFractionDigits: 0
-    }).format(producto.precio);
-
-    const stockCritico =
-        producto.stock > 0 &&
-        producto.stock <= producto.stockCritico;
-
-    return (
-        <div className="col-md-6 col-xl-4">
-
-            <div className="card h-100 shadow-sm">
-
-                <img
-                    src={producto.imagen}
-                    className="card-img-top"
-                    alt={producto.nombre}
-                    style={{
-                        height: '220px',
-                        objectFit: 'cover'
-                    }}
-                />
-
-                <div className="card-body d-flex flex-column">
-
-                    <span className="badge text-bg-secondary mb-2 align-self-start">
-                        {producto.categoria}
-                    </span>
-
-                    <h5 className="card-title">
-                        {producto.nombre}
-                    </h5>
-
-                    <p className="card-text text-muted">
-                        {producto.descripcion}
-                    </p>
-
-                    <p className="fw-bold fs-5 text-danger mb-2">
-                        {precioFormateado}
-                    </p>
-
-                    <p className="mb-1">
-                        Stock: {producto.stock}
-                    </p>
-
-                    {stockCritico && (
-
-                        <div className="alert alert-warning py-1 px-2 mt-2 mb-0">
-                            Stock crítico
-                        </div>
-
-                    )}
-
-                    {producto.stock === 0 && (
-
-                        <div className="alert alert-danger py-1 px-2 mt-2 mb-0">
-                            Producto agotado
-                        </div>
-
-                    )}
-
-                    <div className="d-flex gap-2 mt-auto pt-3">
-
-                        <Link
-                            to={`/productos/${producto.id}`}
-                            className="btn btn-outline-dark btn-sm flex-grow-1"
-                        >
-                            Ver detalle
-                        </Link>
-
-                        <button
-                            type="button"
-                            className="btn btn-danger btn-sm"
-                            disabled={producto.stock === 0}
-                            onClick={() =>
-                                agregarProducto(producto)
-                            }
-                        >
-                            <i className="bi bi-cart-plus"></i>
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-    );
-}
 
 export default function Productos() {
 
-    const [productos] = useState(() =>
-        obtenerProductos()
-    );
-
+    const productos = obtenerProductos();
     const categorias = obtenerCategorias();
 
-    const [searchParams, setSearchParams] =
-        useSearchParams();
+    const {
+        agregarProducto
+    } = useCarrito();
 
-    const busquedaURL =
-        searchParams.get('buscar') || '';
+    const [
+        searchParams,
+        setSearchParams
+    ] = useSearchParams();
 
-    const categoriasSeleccionadas = useMemo(
-        () =>
-            searchParams.getAll('categoria'),
-        [searchParams]
-    );
+
+    const categoriasSeleccionadas =
+        searchParams.getAll('categoria');
+
 
     const [busqueda, setBusqueda] =
-        useState(busquedaURL);
+        useState('');
 
     const [orden, setOrden] =
-        useState('original');
+        useState('');
 
-    useEffect(() => {
-        setBusqueda(busquedaURL);
-    }, [busquedaURL]);
 
-    const manejarBusqueda = (event) => {
+    const productosFiltrados =
+        useMemo(() => {
 
-        const valor = event.target.value;
+            let resultado = [...productos];
 
-        setBusqueda(valor);
 
-        const nuevosParametros =
-            new URLSearchParams(searchParams);
+            if (
+                categoriasSeleccionadas.length > 0
+            ) {
 
-        if (valor.trim()) {
-
-            nuevosParametros.set(
-                'buscar',
-                valor
-            );
-
-        } else {
-
-            nuevosParametros.delete(
-                'buscar'
-            );
-        }
-
-        setSearchParams(
-            nuevosParametros,
-            { replace: true }
-        );
-    };
-
-    const seleccionarCategoria = (categoria) => {
-
-        const nuevosParametros =
-            new URLSearchParams(searchParams);
-
-        const categoriasActuales =
-            searchParams.getAll('categoria');
-
-        let nuevasCategorias;
-
-        if (
-            categoriasActuales.includes(categoria)
-        ) {
-
-            nuevasCategorias =
-                categoriasActuales.filter(
-                    (item) =>
-                        item !== categoria
-                );
-
-        } else {
-
-            nuevasCategorias = [
-                ...categoriasActuales,
-                categoria
-            ];
-        }
-
-        nuevosParametros.delete(
-            'categoria'
-        );
-
-        nuevasCategorias.forEach(
-            (item) => {
-
-                nuevosParametros.append(
-                    'categoria',
-                    item
-                );
-
+                resultado =
+                    resultado.filter(
+                        (producto) =>
+                            categoriasSeleccionadas.includes(
+                                producto.categoria
+                            )
+                    );
             }
-        );
 
-        setSearchParams(
-            nuevosParametros
-        );
-    };
 
-    const limpiarFiltros = () => {
+            if (busqueda.trim()) {
 
-        setBusqueda('');
-        setOrden('original');
-        setSearchParams({});
-    };
+                const texto =
+                    busqueda
+                        .trim()
+                        .toLowerCase();
 
-    const productosFiltrados = useMemo(() => {
 
-        let resultado = [...productos];
+                resultado =
+                    resultado.filter(
+                        (producto) =>
 
-        const texto =
-            busqueda.trim().toLowerCase();
+                            producto.nombre
+                                .toLowerCase()
+                                .includes(texto)
 
-        if (texto) {
+                            ||
 
-            resultado = resultado.filter(
-                (producto) =>
+                            producto.categoria
+                                .toLowerCase()
+                                .includes(texto)
 
-                    producto.nombre
-                        .toLowerCase()
-                        .includes(texto)
+                            ||
 
-                    ||
+                            producto.descripcion
+                                .toLowerCase()
+                                .includes(texto)
+                    );
+            }
 
-                    producto.descripcion
-                        .toLowerCase()
-                        .includes(texto)
 
-                    ||
-
-                    producto.categoria
-                        .toLowerCase()
-                        .includes(texto)
-
-                    ||
-
-                    producto.codigo
-                        .toLowerCase()
-                        .includes(texto)
-            );
-        }
-
-        if (
-            categoriasSeleccionadas.length > 0
-        ) {
-
-            resultado = resultado.filter(
-                (producto) =>
-                    categoriasSeleccionadas.includes(
-                        producto.categoria
-                    )
-            );
-        }
-
-        switch (orden) {
-
-            case 'precio-asc':
+            if (orden === 'precio-menor') {
 
                 resultado.sort(
                     (a, b) =>
-                        a.precio - b.precio
+                        obtenerPrecioFinalProducto(a)
+                        -
+                        obtenerPrecioFinalProducto(b)
                 );
+            }
 
-                break;
 
-            case 'precio-desc':
+            if (orden === 'precio-mayor') {
 
                 resultado.sort(
                     (a, b) =>
-                        b.precio - a.precio
+                        obtenerPrecioFinalProducto(b)
+                        -
+                        obtenerPrecioFinalProducto(a)
                 );
+            }
 
-                break;
 
-            case 'nombre-asc':
+            if (orden === 'nombre') {
 
                 resultado.sort(
                     (a, b) =>
@@ -295,24 +128,70 @@ export default function Productos() {
                             b.nombre
                         )
                 );
+            }
 
-                break;
 
-            default:
-                break;
-        }
+            return resultado;
 
-        return resultado;
+        }, [
+            productos,
+            categoriasSeleccionadas,
+            busqueda,
+            orden
+        ]);
 
-    }, [
-        productos,
-        busqueda,
-        categoriasSeleccionadas,
-        orden
-    ]);
+
+    function alternarCategoria(
+        nombreCategoria
+    ) {
+
+        const nuevasCategorias =
+            categoriasSeleccionadas.includes(
+                nombreCategoria
+            )
+                ? categoriasSeleccionadas.filter(
+                    (categoria) =>
+                        categoria !==
+                        nombreCategoria
+                )
+                : [
+                    ...categoriasSeleccionadas,
+                    nombreCategoria
+                ];
+
+
+        const nuevosParametros =
+            new URLSearchParams();
+
+
+        nuevasCategorias.forEach(
+            (categoria) => {
+
+                nuevosParametros.append(
+                    'categoria',
+                    categoria
+                );
+
+            }
+        );
+
+
+        setSearchParams(
+            nuevosParametros
+        );
+    }
+
+
+    function limpiarFiltros() {
+
+        setSearchParams({});
+        setBusqueda('');
+        setOrden('');
+    }
+
 
     return (
-        <main className="container my-4">
+        <main className="container my-5">
 
             <div className="mb-4">
 
@@ -321,13 +200,15 @@ export default function Productos() {
                 </h1>
 
                 <p className="text-muted">
-                    {productosFiltrados.length}{' '}
-                    productos disponibles
+                    {productosFiltrados.length} productos disponibles
                 </p>
 
             </div>
 
+
             <div className="row g-4">
+
+                {/* FILTROS */}
 
                 <aside className="col-lg-3">
 
@@ -336,23 +217,22 @@ export default function Productos() {
                         <div className="card-body">
 
                             <h5 className="mb-3">
-
                                 <i className="bi bi-funnel me-2"></i>
-
                                 Filtros
-
                             </h5>
 
-                            <p className="fw-bold mb-2">
-                                Categorías
-                            </p>
 
-                            <div className="d-grid gap-2">
+                            <strong>
+                                Categorías
+                            </strong>
+
+
+                            <div className="d-grid gap-2 mt-2">
 
                                 {categorias.map(
                                     (categoria) => {
 
-                                        const seleccionada =
+                                        const activa =
                                             categoriasSeleccionadas.includes(
                                                 categoria.nombre
                                             );
@@ -363,12 +243,12 @@ export default function Productos() {
                                                 key={categoria.id}
                                                 type="button"
                                                 className={
-                                                    seleccionada
+                                                    activa
                                                         ? 'btn btn-danger btn-sm'
                                                         : 'btn btn-outline-secondary btn-sm'
                                                 }
                                                 onClick={() =>
-                                                    seleccionarCategoria(
+                                                    alternarCategoria(
                                                         categoria.nombre
                                                     )
                                                 }
@@ -377,18 +257,20 @@ export default function Productos() {
                                             </button>
 
                                         );
+
                                     }
                                 )}
 
-                            </div>
 
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary btn-sm w-100 mt-3"
-                                onClick={limpiarFiltros}
-                            >
-                                Limpiar filtros
-                            </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={limpiarFiltros}
+                                >
+                                    Limpiar filtros
+                                </button>
+
+                            </div>
 
                         </div>
 
@@ -396,9 +278,12 @@ export default function Productos() {
 
                 </aside>
 
+
+                {/* PRODUCTOS */}
+
                 <section className="col-lg-9">
 
-                    <div className="row g-3 mb-4">
+                    <div className="row g-3 mb-3">
 
                         <div className="col-md-8">
 
@@ -411,41 +296,46 @@ export default function Productos() {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    value={busqueda}
-                                    onChange={manejarBusqueda}
                                     placeholder="Buscar productos por nombre, categoría o descripción..."
+                                    value={busqueda}
+                                    onChange={(evento) =>
+                                        setBusqueda(
+                                            evento.target.value
+                                        )
+                                    }
                                 />
 
                             </div>
 
                         </div>
 
+
                         <div className="col-md-4">
 
                             <select
                                 className="form-select"
                                 value={orden}
-                                onChange={(event) =>
+                                onChange={(evento) =>
                                     setOrden(
-                                        event.target.value
+                                        evento.target.value
                                     )
                                 }
                             >
 
-                                <option value="original">
+                                <option value="">
                                     Ordenar por
                                 </option>
 
-                                <option value="precio-asc">
-                                    Precio: Menor a Mayor
+                                <option value="precio-menor">
+                                    Precio menor
                                 </option>
 
-                                <option value="precio-desc">
-                                    Precio: Mayor a Menor
+                                <option value="precio-mayor">
+                                    Precio mayor
                                 </option>
 
-                                <option value="nombre-asc">
-                                    Nombre: A-Z
+                                <option value="nombre">
+                                    Nombre
                                 </option>
 
                             </select>
@@ -454,36 +344,174 @@ export default function Productos() {
 
                     </div>
 
-                    {productosFiltrados.length > 0 ? (
 
-                        <div className="row g-4">
+                    {productosFiltrados.length === 0 ? (
 
-                            {productosFiltrados.map(
-                                (producto) => (
-
-                                    <ProductoCard
-                                        key={producto.id}
-                                        producto={producto}
-                                    />
-
-                                )
-                            )}
-
+                        <div className="alert alert-info">
+                            No se encontraron productos con los filtros seleccionados.
                         </div>
 
                     ) : (
 
-                        <div className="text-center py-5">
+                        <div className="row g-4">
 
-                            <i className="bi bi-search fs-1 text-muted"></i>
+                            {productosFiltrados.map(
+                                (producto) => {
 
-                            <h5 className="mt-3">
-                                No se encontraron productos
-                            </h5>
+                                    const descuento =
+                                        obtenerDescuentoProducto(
+                                            producto
+                                        );
 
-                            <p className="text-muted">
-                                Intenta modificar la búsqueda o los filtros.
-                            </p>
+                                    const precioFinal =
+                                        obtenerPrecioFinalProducto(
+                                            producto
+                                        );
+
+                                    const enOferta =
+                                        productoEstaEnOferta(
+                                            producto
+                                        );
+
+
+                                    return (
+
+                                        <div
+                                            key={producto.id}
+                                            className="col-md-6 col-xl-4"
+                                        >
+
+                                            <div className="card shadow-sm h-100">
+
+                                                <img
+                                                    src={producto.imagen}
+                                                    className="card-img-top"
+                                                    alt={producto.nombre}
+                                                    style={{
+                                                        height: '220px',
+                                                        objectFit: 'contain',
+                                                        padding: '15px'
+                                                    }}
+                                                />
+
+
+                                                <div className="card-body d-flex flex-column">
+
+                                                    <div className="mb-2">
+
+                                                        <span className="badge text-bg-secondary">
+                                                            {producto.categoria}
+                                                        </span>
+
+                                                        {enOferta && (
+
+                                                            <span className="badge text-bg-danger ms-2">
+                                                                -{descuento}%
+                                                            </span>
+
+                                                        )}
+
+                                                    </div>
+
+
+                                                    <h5 className="card-title">
+                                                        {producto.nombre}
+                                                    </h5>
+
+
+                                                    <p className="card-text text-muted">
+                                                        {producto.descripcion}
+                                                    </p>
+
+
+                                                    <div className="mt-auto">
+
+                                                        {enOferta ? (
+
+                                                            <>
+                                                                <div className="text-muted text-decoration-line-through">
+                                                                    ${producto.precio.toLocaleString('es-CL')}
+                                                                </div>
+
+                                                                <h5 className="text-danger">
+                                                                    ${precioFinal.toLocaleString('es-CL')}
+                                                                </h5>
+                                                            </>
+
+                                                        ) : (
+
+                                                            <h5 className="text-danger">
+                                                                ${producto.precio.toLocaleString('es-CL')}
+                                                            </h5>
+
+                                                        )}
+
+
+                                                        <p className="mb-2">
+                                                            Stock: {producto.stock}
+                                                        </p>
+
+
+                                                        {
+                                                            producto.stock <=
+                                                            producto.stockCritico
+                                                            && (
+
+                                                                <div className="alert alert-warning py-2">
+                                                                    Stock crítico
+                                                                </div>
+
+                                                            )
+                                                        }
+
+
+                                                        <div className="d-flex gap-2">
+
+                                                            <Link
+                                                                to={`/productos/${producto.id}`}
+                                                                className="btn btn-outline-secondary flex-grow-1"
+                                                            >
+                                                                Ver detalle
+                                                            </Link>
+
+
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-danger"
+                                                                disabled={
+                                                                    producto.stock <= 0
+                                                                }
+                                                                onClick={() =>
+                                                                    agregarProducto({
+                                                                        ...producto,
+
+                                                                        precioOriginal:
+                                                                            producto.precio,
+
+                                                                        precio:
+                                                                            precioFinal,
+
+                                                                        descuento
+                                                                    })
+                                                                }
+                                                            >
+                                                                <i className="bi bi-cart-plus"></i>
+                                                            </button>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
 
                         </div>
 

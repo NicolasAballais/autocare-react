@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { iniciarSesion } from '../data/usuarios';
+import { iniciarSesion } from '../services/usuariosService';
 
 export default function Login() {
 

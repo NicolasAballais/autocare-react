@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { obtenerSesion, actualizarUsuarioPerfil } from '../data/usuarios';
+import { obtenerSesion, actualizarUsuarioPerfil } from '../services/usuariosService';
 
 export default function Perfil() {
 

@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 
 import {
     obtenerIncidenciasUsuario
-} from '../data/incidencias';
+} from '../services/incidenciasService';
 
 import {
     obtenerSesion
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 export default function Incidencias() {
 

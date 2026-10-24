@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
     obtenerUsuarioPorId,
     actualizarUsuarioAdmin
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 
 export default function AdminUsuarioEditar() {

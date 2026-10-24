@@ -1,12 +1,25 @@
 import { Link, useParams } from 'react-router-dom';
-import { obtenerProductos } from '../data/productos';
-import { useCarrito } from '../context/CarritoContext';
+
+import {
+    obtenerProductos,
+    obtenerDescuentoProducto,
+    obtenerPrecioFinalProducto,
+    productoEstaEnOferta
+} from '../services/productosService';
+
+import {
+    useCarrito
+} from '../context/CarritoContext';
+
 
 export default function DetalleProducto() {
 
     const { id } = useParams();
 
-    const { agregarProducto } = useCarrito();
+    const {
+        agregarProducto
+    } = useCarrito();
+
 
     const producto =
         obtenerProductos().find(
@@ -14,7 +27,9 @@ export default function DetalleProducto() {
                 producto.id === Number(id)
         );
 
+
     if (!producto) {
+
         return (
             <main className="container my-5 text-center">
 
@@ -33,7 +48,24 @@ export default function DetalleProducto() {
         );
     }
 
-    const precioFormateado =
+
+    const descuento =
+        obtenerDescuentoProducto(
+            producto
+        );
+
+    const precioFinal =
+        obtenerPrecioFinalProducto(
+            producto
+        );
+
+    const enOferta =
+        productoEstaEnOferta(
+            producto
+        );
+
+
+    const formatoPrecio =
         new Intl.NumberFormat(
             'es-CL',
             {
@@ -41,7 +73,24 @@ export default function DetalleProducto() {
                 currency: 'CLP',
                 maximumFractionDigits: 0
             }
-        ).format(producto.precio);
+        );
+
+
+    function agregarConPrecioFinal() {
+
+        agregarProducto({
+            ...producto,
+
+            precioOriginal:
+                producto.precio,
+
+            precio:
+                precioFinal,
+
+            descuento
+        });
+    }
+
 
     return (
         <main className="container my-5">
@@ -58,47 +107,128 @@ export default function DetalleProducto() {
 
                 </div>
 
+
                 <div className="col-md-6">
 
-                    <span className="badge text-bg-secondary mb-3">
-                        {producto.categoria}
-                    </span>
+                    <div className="mb-3">
+
+                        <span className="badge text-bg-secondary">
+                            {producto.categoria}
+                        </span>
+
+
+                        {enOferta && (
+
+                            <span className="badge text-bg-danger ms-2">
+                                -{descuento}%
+                            </span>
+
+                        )}
+
+                    </div>
+
 
                     <h1>
                         {producto.nombre}
                     </h1>
 
+
                     <p className="lead text-muted">
                         {producto.descripcion}
                     </p>
 
-                    <h3 className="text-danger">
-                        {precioFormateado}
-                    </h3>
+
+                    {enOferta ? (
+
+                        <div className="mb-3">
+
+                            <div
+                                className="
+                                    text-muted
+                                    text-decoration-line-through
+                                    fs-5
+                                "
+                            >
+                                {formatoPrecio.format(
+                                    producto.precio
+                                )}
+                            </div>
+
+                            <h3 className="text-danger mb-0">
+                                {formatoPrecio.format(
+                                    precioFinal
+                                )}
+                            </h3>
+
+                            <small className="text-success">
+                                Ahorras{' '}
+                                {
+                                    formatoPrecio.format(
+                                        producto.precio -
+                                        precioFinal
+                                    )
+                                }
+                            </small>
+
+                        </div>
+
+                    ) : (
+
+                        <h3 className="text-danger">
+                            {formatoPrecio.format(
+                                producto.precio
+                            )}
+                        </h3>
+
+                    )}
+
 
                     <p>
-                        <strong>Código:</strong>{' '}
+                        <strong>
+                            Código:
+                        </strong>{' '}
                         {producto.codigo}
                     </p>
 
+
                     <p>
-                        <strong>Stock disponible:</strong>{' '}
+                        <strong>
+                            Stock disponible:
+                        </strong>{' '}
                         {producto.stock}
                     </p>
+
+
+                    {
+                        producto.stock <=
+                        producto.stockCritico
+                        && (
+
+                            <div className="alert alert-warning">
+                                Stock crítico
+                            </div>
+
+                        )
+                    }
+
 
                     <div className="d-flex gap-2 mt-4">
 
                         <button
                             type="button"
                             className="btn btn-danger"
-                            disabled={producto.stock === 0}
-                            onClick={() =>
-                                agregarProducto(producto)
+                            disabled={
+                                producto.stock <= 0
+                            }
+                            onClick={
+                                agregarConPrecioFinal
                             }
                         >
                             <i className="bi bi-cart-plus me-2"></i>
+
                             Agregar al carrito
                         </button>
+
 
                         <Link
                             to="/productos"

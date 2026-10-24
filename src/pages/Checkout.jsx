@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import { useCarrito } from '../context/CarritoContext';
-import { obtenerSesion } from '../data/usuarios';
+import { obtenerSesion } from '../services/usuariosService';
+
 
 export default function Checkout() {
 
@@ -15,17 +17,31 @@ export default function Checkout() {
 
     const sesion = obtenerSesion();
 
+
     const [datosCliente, setDatosCliente] = useState({
+
         nombre: sesion
             ? `${sesion.nombre || ''} ${sesion.apellido || ''}`.trim()
             : '',
-        correo: sesion?.correo || '',
-        telefono: sesion?.telefono || '',
-        direccion: sesion?.direccion || '',
-        comuna: sesion?.comuna || ''
+
+        correo:
+            sesion?.correo || '',
+
+        telefono:
+            sesion?.telefono || '',
+
+        direccion:
+            sesion?.direccion || '',
+
+        comuna:
+            sesion?.comuna || ''
+
     });
 
-    const [tipoEntrega, setTipoEntrega] = useState('');
+
+    const [tipoEntrega, setTipoEntrega] =
+        useState('');
+
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
@@ -33,19 +49,28 @@ export default function Checkout() {
         maximumFractionDigits: 0
     });
 
-    const manejarCambio = (event) => {
 
-        const { name, value } = event.target;
+    function manejarCambio(evento) {
+
+        const { name, value } =
+            evento.target;
 
         setDatosCliente({
             ...datosCliente,
             [name]: value
         });
-    };
+    }
 
-    const continuarPago = (event) => {
 
-        event.preventDefault();
+    function continuarPago(evento) {
+
+        evento.preventDefault();
+
+
+        if (carrito.length === 0) {
+            return;
+        }
+
 
         navigate('/pago', {
             state: {
@@ -53,7 +78,44 @@ export default function Checkout() {
                 tipoEntrega
             }
         });
-    };
+    }
+
+
+    /*
+        PROTECCIÓN:
+        evita entrar manualmente a /checkout
+        cuando no existen productos.
+    */
+    if (carrito.length === 0) {
+
+        return (
+            <main className="container my-5">
+
+                <div className="alert alert-warning">
+
+                    <h4 className="alert-heading">
+                        Tu carrito está vacío
+                    </h4>
+
+                    <p>
+                        Debes agregar al menos un producto antes de continuar al checkout.
+                    </p>
+
+                    <hr />
+
+                    <Link
+                        to="/productos"
+                        className="btn btn-danger"
+                    >
+                        Ver productos
+                    </Link>
+
+                </div>
+
+            </main>
+        );
+    }
+
 
     return (
         <main className="container my-5">
@@ -61,6 +123,7 @@ export default function Checkout() {
             <h1 className="mb-4">
                 Checkout
             </h1>
+
 
             <form onSubmit={continuarPago}>
 
@@ -76,6 +139,7 @@ export default function Checkout() {
                                     Datos de entrega
                                 </h4>
 
+
                                 {sesion && (
 
                                     <div className="alert alert-info">
@@ -87,6 +151,7 @@ export default function Checkout() {
                                     </div>
 
                                 )}
+
 
                                 <div className="row g-3">
 
@@ -111,6 +176,7 @@ export default function Checkout() {
 
                                     </div>
 
+
                                     <div className="col-md-6">
 
                                         <label
@@ -131,6 +197,7 @@ export default function Checkout() {
                                         />
 
                                     </div>
+
 
                                     <div className="col-md-6">
 
@@ -153,6 +220,7 @@ export default function Checkout() {
 
                                     </div>
 
+
                                     <div className="col-md-6">
 
                                         <label
@@ -173,6 +241,7 @@ export default function Checkout() {
                                         />
 
                                     </div>
+
 
                                     <div className="col-12">
 
@@ -224,8 +293,10 @@ export default function Checkout() {
                                             id="tipoEntrega"
                                             className="form-select"
                                             value={tipoEntrega}
-                                            onChange={(event) =>
-                                                setTipoEntrega(event.target.value)
+                                            onChange={(evento) =>
+                                                setTipoEntrega(
+                                                    evento.target.value
+                                                )
                                             }
                                             required
                                         >
@@ -267,6 +338,7 @@ export default function Checkout() {
 
                                 <hr />
 
+
                                 <p>
                                     Productos diferentes: {carrito.length}
                                 </p>
@@ -275,19 +347,26 @@ export default function Checkout() {
                                     Cantidad total: {cantidadTotal}
                                 </p>
 
+
                                 {tipoEntrega && (
 
                                     <p>
-                                        Entrega: <strong>{tipoEntrega}</strong>
+                                        Entrega:{' '}
+                                        <strong>
+                                            {tipoEntrega}
+                                        </strong>
                                     </p>
 
                                 )}
 
+
                                 <hr />
+
 
                                 <h4 className="text-danger">
                                     Total: {formatoPrecio.format(total)}
                                 </h4>
+
 
                                 <button
                                     type="submit"

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { obtenerClientes } from '../data/usuarios';
+import { obtenerClientes } from '../services/usuariosService';
 
 
 export default function AdminUsuarios() {

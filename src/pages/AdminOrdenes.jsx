@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     obtenerOrdenes,
     actualizarEstadoOrden
-} from '../data/ordenes';
+} from '../services/ordenesService';
 
 export default function AdminOrdenes() {
 

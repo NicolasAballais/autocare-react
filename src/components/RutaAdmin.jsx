@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { obtenerSesion } from '../data/usuarios';
+import { obtenerSesion } from '../services/usuariosService';
 
 export default function RutaAdmin({ children }) {
 

@@ -1,7 +1,7 @@
-import { obtenerProductos } from '../data/productos';
-import { obtenerOrdenes } from '../data/ordenes';
-import { obtenerClientes } from '../data/usuarios';
-import { obtenerIncidencias } from '../data/incidencias';
+import { obtenerProductos } from '../services/productosService';
+import { obtenerOrdenes } from '../services/ordenesService';
+import { obtenerClientes } from '../services/usuariosService';
+import { obtenerIncidencias } from '../services/incidenciasService';
 
 
 export default function AdminReportes() {

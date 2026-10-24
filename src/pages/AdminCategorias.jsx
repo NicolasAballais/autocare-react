@@ -5,7 +5,7 @@ import {
     guardarCategoria,
     actualizarCategoria,
     eliminarCategoria
-} from '../data/categorias';
+} from '../services/categoriasService';
 
 export default function AdminCategorias() {
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 import {
     obtenerBlogs
-} from '../data/blogs';
+} from '../services/blogsService';
 
 
 export default function Blog() {

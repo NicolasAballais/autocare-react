@@ -2,11 +2,11 @@ import { Link, useParams } from 'react-router-dom';
 
 import {
     obtenerUsuarioPorId
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 import {
     obtenerOrdenesUsuario
-} from '../data/ordenes';
+} from '../services/ordenesService';
 
 export default function AdminUsuarioDetalle() {
 

@@ -1,44 +1,29 @@
 import { Link } from 'react-router-dom';
-import { obtenerProductos } from '../data/productos';
+
+import {
+    obtenerProductos,
+    obtenerDescuentoProducto,
+    obtenerPrecioFinalProducto,
+    productoEstaEnOferta
+} from '../services/productosService';
 
 
 export default function Ofertas() {
 
     const productos = obtenerProductos();
 
-    /*
-        Para esta simulación definimos qué productos
-        se encuentran actualmente en oferta y su descuento.
-    */
-    const descuentos = {
-        1: 20,
-        2: 15,
-        4: 10
-    };
-
 
     const productosEnOferta = productos
-        .filter(
-            (producto) =>
-                descuentos[producto.id]
-        )
-        .map((producto) => {
+        .filter(productoEstaEnOferta)
+        .map((producto) => ({
+            ...producto,
 
-            const descuento =
-                descuentos[producto.id];
+            descuento:
+                obtenerDescuentoProducto(producto),
 
-            const precioOferta =
-                Math.round(
-                    producto.precio *
-                    (1 - descuento / 100)
-                );
-
-            return {
-                ...producto,
-                descuento,
-                precioOferta
-            };
-        });
+            precioOferta:
+                obtenerPrecioFinalProducto(producto)
+        }));
 
 
     return (

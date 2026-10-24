@@ -1,4 +1,4 @@
-import { obtenerProductos, guardarProductos } from '../data/productos';
+import { obtenerProductos, guardarProductos } from '../services/productosService';
 import { Link } from 'react-router-dom';
 
 export default function AdminProductos() {

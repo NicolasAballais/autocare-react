@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { obtenerProductos } from '../data/productos';
+import { obtenerProductos } from '../services/productosService';
 
 
 export default function Destacados() {

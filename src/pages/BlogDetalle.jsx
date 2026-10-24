@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import {
     obtenerBlogPorId
-} from '../data/blogs';
+} from '../services/blogsService';
 
 
 export default function BlogDetalle() {

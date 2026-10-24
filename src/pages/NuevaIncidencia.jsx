@@ -3,15 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import {
     obtenerOrdenesUsuario
-} from '../data/ordenes';
+} from '../services/ordenesService';
 
 import {
     guardarIncidencia
-} from '../data/incidencias';
+} from '../services/incidenciasService';
 
 import {
     obtenerSesion
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 export default function NuevaIncidencia() {
 

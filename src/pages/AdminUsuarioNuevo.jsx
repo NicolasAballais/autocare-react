@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import {
     registrarUsuario
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 
 export default function AdminUsuarioNuevo() {

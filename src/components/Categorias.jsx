@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { obtenerCategorias } from '../data/categorias';
+import { obtenerCategorias } from '../services/categoriasService';
 
 function obtenerIcono(nombreCategoria) {
 

@@ -3,11 +3,11 @@ import { Link, useParams } from 'react-router-dom';
 import {
     obtenerOrdenes,
     ordenPerteneceAUsuario
-} from '../data/ordenes';
+} from '../services/ordenesService';
 
 import {
     obtenerSesion
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 
 export default function DetalleOrden() {

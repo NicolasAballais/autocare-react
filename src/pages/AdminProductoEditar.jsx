@@ -8,11 +8,11 @@ import {
 import {
     obtenerProductos,
     guardarProductos
-} from '../data/productos';
+} from '../services/productosService';
 
 import {
     obtenerCategorias
-} from '../data/categorias';
+} from '../services/categoriasService';
 
 
 export default function AdminProductoEditar() {

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     obtenerIncidencias,
     actualizarEstadoIncidencia
-} from '../data/incidencias';
+} from '../services/incidenciasService';
 
 export default function AdminIncidencias() {
 

@@ -1,57 +1,33 @@
+import categoriasIniciales from '../data/categorias.json';
 import {
     obtenerProductos,
     guardarProductos
-} from './productos';
+} from './productosService';
 
 const CLAVE_CATEGORIAS = 'categoriasAutoCare';
 
-const CATEGORIAS_INICIALES = [
-    {
-        id: 1,
-        nombre: 'Aceites y Filtros'
-    },
-    {
-        id: 2,
-        nombre: 'Detailing y Limpieza'
-    },
-    {
-        id: 3,
-        nombre: 'Ampolletas y Electricidad'
-    },
-    {
-        id: 4,
-        nombre: 'Accesorios'
-    }
-];
-
-
 export function obtenerCategorias() {
-
-    const datos = localStorage.getItem(
-        CLAVE_CATEGORIAS
-    );
+    const datos = localStorage.getItem(CLAVE_CATEGORIAS);
 
     if (datos) {
         return JSON.parse(datos);
     }
 
+    const categorias = categoriasIniciales.map((categoria) => ({ ...categoria }));
+
     localStorage.setItem(
         CLAVE_CATEGORIAS,
-        JSON.stringify(CATEGORIAS_INICIALES)
+        JSON.stringify(categorias)
     );
 
-    return [...CATEGORIAS_INICIALES];
+    return categorias;
 }
 
-
 export function guardarCategoria(nombre) {
-
     const categorias = obtenerCategorias();
-
     const nombreLimpio = nombre.trim();
 
     if (!nombreLimpio) {
-
         return {
             exito: false,
             mensaje: 'El nombre de la categoría es obligatorio.'
@@ -65,7 +41,6 @@ export function guardarCategoria(nombre) {
     );
 
     if (nombreExiste) {
-
         return {
             exito: false,
             mensaje: 'Ya existe una categoría con ese nombre.'
@@ -93,18 +68,14 @@ export function guardarCategoria(nombre) {
     };
 }
 
-
 export function actualizarCategoria(id, nombre) {
-
     const categorias = obtenerCategorias();
 
     const categoriaActual = categorias.find(
-        (categoria) =>
-            categoria.id === Number(id)
+        (categoria) => categoria.id === Number(id)
     );
 
     if (!categoriaActual) {
-
         return {
             exito: false,
             mensaje: 'Categoría no encontrada.'
@@ -114,7 +85,6 @@ export function actualizarCategoria(id, nombre) {
     const nombreLimpio = nombre.trim();
 
     if (!nombreLimpio) {
-
         return {
             exito: false,
             mensaje: 'El nombre de la categoría es obligatorio.'
@@ -124,125 +94,77 @@ export function actualizarCategoria(id, nombre) {
     const nombreDuplicado = categorias.some(
         (categoria) =>
             categoria.id !== Number(id) &&
-            categoria.nombre.toLowerCase() ===
-                nombreLimpio.toLowerCase()
+            categoria.nombre.toLowerCase() === nombreLimpio.toLowerCase()
     );
 
     if (nombreDuplicado) {
-
         return {
             exito: false,
             mensaje: 'Ya existe otra categoría con ese nombre.'
         };
     }
 
-    const nombreAnterior =
-        categoriaActual.nombre;
+    const nombreAnterior = categoriaActual.nombre;
 
-    const categoriasActualizadas =
-        categorias.map((categoria) => {
-
-            if (
-                categoria.id !== Number(id)
-            ) {
-                return categoria;
-            }
-
-            return {
-                ...categoria,
-                nombre: nombreLimpio
-            };
-        });
+    const categoriasActualizadas = categorias.map((categoria) =>
+        categoria.id === Number(id)
+            ? { ...categoria, nombre: nombreLimpio }
+            : categoria
+    );
 
     localStorage.setItem(
         CLAVE_CATEGORIAS,
         JSON.stringify(categoriasActualizadas)
     );
 
-    // Actualizar también los productos
-    // asociados a la categoría renombrada.
+    const productos = obtenerProductos();
 
-    const productos =
-        obtenerProductos();
-
-    const productosActualizados =
-        productos.map((producto) => {
-
-            if (
-                producto.categoria !==
-                nombreAnterior
-            ) {
-                return producto;
-            }
-
-            return {
-                ...producto,
-                categoria: nombreLimpio
-            };
-        });
-
-    guardarProductos(
-        productosActualizados
+    const productosActualizados = productos.map((producto) =>
+        producto.categoria === nombreAnterior
+            ? { ...producto, categoria: nombreLimpio }
+            : producto
     );
 
-    return {
-        exito: true
-    };
+    guardarProductos(productosActualizados);
+
+    return { exito: true };
 }
 
-
 export function eliminarCategoria(id) {
+    const categorias = obtenerCategorias();
 
-    const categorias =
-        obtenerCategorias();
-
-    const categoria =
-        categorias.find(
-            (item) =>
-                item.id === Number(id)
-        );
+    const categoria = categorias.find(
+        (item) => item.id === Number(id)
+    );
 
     if (!categoria) {
-
         return {
             exito: false,
             mensaje: 'Categoría no encontrada.'
         };
     }
 
-    const productos =
-        obtenerProductos();
+    const productos = obtenerProductos();
 
-    const tieneProductos =
-        productos.some(
-            (producto) =>
-                producto.categoria ===
-                categoria.nombre
-        );
+    const tieneProductos = productos.some(
+        (producto) => producto.categoria === categoria.nombre
+    );
 
     if (tieneProductos) {
-
         return {
             exito: false,
-            mensaje:
-                'No se puede eliminar la categoría porque tiene productos asociados.'
+            mensaje: 'No se puede eliminar la categoría porque tiene productos asociados.'
         };
     }
 
-    const categoriasActualizadas =
-        categorias.filter(
-            (item) =>
-                item.id !== Number(id)
-        );
+    const categoriasActualizadas = categorias.filter(
+        (item) => item.id !== Number(id)
+    );
 
     localStorage.setItem(
         CLAVE_CATEGORIAS,
-        JSON.stringify(
-            categoriasActualizadas
-        )
+        JSON.stringify(categoriasActualizadas)
     );
 
-    return {
-        exito: true
-    };
+    return { exito: true };
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { obtenerCategorias } from '../data/categorias';
-import { obtenerProductos } from '../data/productos';
+import { obtenerCategorias } from '../services/categoriasService';
+import { obtenerProductos } from '../services/productosService';
 
 export default function Categorias() {
 

@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 
 import {
     obtenerOrdenesUsuario
-} from '../data/ordenes';
+} from '../services/ordenesService';
 
 import {
     obtenerSesion
-} from '../data/usuarios';
+} from '../services/usuariosService';
 
 export default function Ordenes() {
 

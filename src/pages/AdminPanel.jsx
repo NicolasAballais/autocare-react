@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 
-import { obtenerProductos } from '../data/productos';
-import { obtenerOrdenes } from '../data/ordenes';
-import { obtenerIncidencias } from '../data/incidencias';
-import { obtenerCategorias } from '../data/categorias';
-import { obtenerClientes } from '../data/usuarios';
+import { obtenerProductos } from '../services/productosService';
+import { obtenerOrdenes } from '../services/ordenesService';
+import { obtenerIncidencias } from '../services/incidenciasService';
+import { obtenerCategorias } from '../services/categoriasService';
+import { obtenerClientes } from '../services/usuariosService';
 
 
 export default function AdminPanel() {
