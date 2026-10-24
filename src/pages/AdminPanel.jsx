@@ -4,6 +4,8 @@ import { obtenerProductos } from '../data/productos';
 import { obtenerOrdenes } from '../data/ordenes';
 import { obtenerIncidencias } from '../data/incidencias';
 import { obtenerCategorias } from '../data/categorias';
+import { obtenerClientes } from '../data/usuarios';
+
 
 export default function AdminPanel() {
 
@@ -11,21 +13,26 @@ export default function AdminPanel() {
     const ordenes = obtenerOrdenes();
     const incidencias = obtenerIncidencias();
     const categorias = obtenerCategorias();
+    const clientes = obtenerClientes();
+
 
     const productosStockCritico = productos.filter(
         (producto) =>
             producto.stock <= producto.stockCritico
     );
 
+
     const ordenesProcesando = ordenes.filter(
         (orden) =>
             orden.estado === 'Procesando'
     );
 
+
     const incidenciasPendientes = incidencias.filter(
         (incidencia) =>
             incidencia.estado === 'Pendiente'
     );
+
 
     return (
         <main className="container my-5">
@@ -42,11 +49,12 @@ export default function AdminPanel() {
 
             </div>
 
+
             <div className="row g-4">
 
                 {/* PRODUCTOS */}
 
-                <div className="col-md-6 col-lg">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -83,9 +91,10 @@ export default function AdminPanel() {
 
                 </div>
 
+
                 {/* CATEGORÍAS */}
 
-                <div className="col-md-6 col-lg">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -122,9 +131,10 @@ export default function AdminPanel() {
 
                 </div>
 
+
                 {/* ÓRDENES */}
 
-                <div className="col-md-6 col-lg">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -161,9 +171,50 @@ export default function AdminPanel() {
 
                 </div>
 
+
+                {/* USUARIOS */}
+
+                <div className="col-md-6 col-lg-3">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                <i className="bi bi-people fs-2 text-success"></i>
+
+                                <span className="badge text-bg-secondary">
+                                    {clientes.length}
+                                </span>
+
+                            </div>
+
+                            <h4>
+                                Usuarios
+                            </h4>
+
+                            <p className="text-muted">
+                                Revisar clientes, editar sus datos y consultar su historial.
+                            </p>
+
+                            <Link
+                                to="/admin/usuarios"
+                                className="btn btn-outline-success"
+                            >
+                                Administrar usuarios
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
                 {/* NOTIFICACIONES */}
 
-                <div className="col-md-6 col-lg">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -200,9 +251,10 @@ export default function AdminPanel() {
 
                 </div>
 
+
                 {/* INCIDENCIAS */}
 
-                <div className="col-md-6 col-lg">
+                <div className="col-md-6 col-lg-3">
 
                     <div className="card shadow-sm h-100">
 
@@ -231,6 +283,42 @@ export default function AdminPanel() {
                                 className="btn btn-outline-warning"
                             >
                                 Administrar incidencias
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {/* REPORTES */}
+
+                <div className="col-md-6 col-lg-3">
+
+                    <div className="card shadow-sm h-100">
+
+                        <div className="card-body">
+
+                            <div className="mb-3">
+
+                                <i className="bi bi-bar-chart-line fs-2 text-info"></i>
+
+                            </div>
+
+                            <h4>
+                                Reportes
+                            </h4>
+
+                            <p className="text-muted">
+                                Consultar ventas, inventario y estadísticas generales.
+                            </p>
+
+                            <Link
+                                to="/admin/reportes"
+                                className="btn btn-outline-info"
+                            >
+                                Ver reportes
                             </Link>
 
                         </div>

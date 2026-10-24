@@ -1,15 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import {
     obtenerProductos,
     guardarProductos
 } from '../data/productos';
 
-import { obtenerCategorias } from '../data/categorias';
+import {
+    obtenerCategorias
+} from '../data/categorias';
+
+
 export default function AdminProductoNuevo() {
 
     const navigate = useNavigate();
+
     const categorias = obtenerCategorias();
+
 
     const [formulario, setFormulario] = useState({
         codigo: '',
@@ -22,59 +29,128 @@ export default function AdminProductoNuevo() {
         imagen: ''
     });
 
-    const manejarCambio = (event) => {
 
-        const { name, value } = event.target;
+    function manejarCambio(evento) {
+
+        const { name, value } = evento.target;
 
         setFormulario({
             ...formulario,
             [name]: value
         });
-    };
+    }
 
-    const guardarProducto = (event) => {
 
-        event.preventDefault();
+    function guardarProducto(evento) {
+
+        evento.preventDefault();
 
         const productos = obtenerProductos();
 
-        const codigoExiste = productos.some(
-            (producto) =>
-                producto.codigo.toLowerCase() ===
-                formulario.codigo.trim().toLowerCase()
-        );
+        const codigo =
+            formulario.codigo.trim();
 
-        if (codigoExiste) {
-            alert('Ya existe un producto con ese código.');
+        const nombre =
+            formulario.nombre.trim();
+
+
+        if (codigo.length < 3) {
+
+            alert(
+                'El código debe tener al menos 3 caracteres.'
+            );
+
             return;
         }
 
+
+        if (!nombre) {
+
+            alert(
+                'El nombre del producto es obligatorio.'
+            );
+
+            return;
+        }
+
+
+        const codigoExiste =
+            productos.some(
+                (producto) =>
+                    producto.codigo
+                        .toLowerCase() ===
+                    codigo.toLowerCase()
+            );
+
+
+        if (codigoExiste) {
+
+            alert(
+                'Ya existe un producto con ese código.'
+            );
+
+            return;
+        }
+
+
         const nuevoProducto = {
+
             id: Date.now(),
-            codigo: formulario.codigo.trim(),
-            nombre: formulario.nombre.trim(),
-            descripcion: formulario.descripcion.trim(),
-            precio: Number(formulario.precio),
-            stock: Number(formulario.stock),
-            stockCritico: Number(formulario.stockCritico),
-            categoria: formulario.categoria,
-            imagen: formulario.imagen.trim()
+
+            codigo,
+
+            nombre,
+
+            descripcion:
+                formulario.descripcion.trim(),
+
+            precio:
+                Number(formulario.precio),
+
+            stock:
+                Number(formulario.stock),
+
+            stockCritico:
+                formulario.stockCritico === ''
+                    ? 0
+                    : Number(formulario.stockCritico),
+
+            categoria:
+                formulario.categoria,
+
+            imagen:
+                formulario.imagen.trim()
+                || '/images/Tienda.png'
         };
+
 
         guardarProductos([
             ...productos,
             nuevoProducto
         ]);
 
-        navigate('/admin/productos');
-    };
+
+        navigate(
+            '/admin/productos'
+        );
+    }
+
 
     return (
         <main className="container my-5">
 
-            <h1 className="mb-4">
-                Nuevo Producto
-            </h1>
+            <div className="mb-4">
+
+                <h1 className="mb-1">
+                    Nuevo Producto
+                </h1>
+
+                <p className="text-muted">
+                    Registra un nuevo producto en el catálogo.
+                </p>
+
+            </div>
+
 
             <div className="card shadow-sm">
 
@@ -83,6 +159,7 @@ export default function AdminProductoNuevo() {
                     <form onSubmit={guardarProducto}>
 
                         <div className="row g-3">
+
 
                             <div className="col-md-4">
 
@@ -100,10 +177,16 @@ export default function AdminProductoNuevo() {
                                     className="form-control"
                                     value={formulario.codigo}
                                     onChange={manejarCambio}
+                                    minLength="3"
                                     required
                                 />
 
+                                <div className="form-text">
+                                    Mínimo 3 caracteres.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-8">
 
@@ -121,10 +204,12 @@ export default function AdminProductoNuevo() {
                                     className="form-control"
                                     value={formulario.nombre}
                                     onChange={manejarCambio}
+                                    maxLength="100"
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-12">
 
@@ -142,10 +227,15 @@ export default function AdminProductoNuevo() {
                                     rows="3"
                                     value={formulario.descripcion}
                                     onChange={manejarCambio}
-                                    required
+                                    maxLength="500"
                                 />
 
+                                <div className="form-text">
+                                    Opcional. Máximo 500 caracteres.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -162,12 +252,14 @@ export default function AdminProductoNuevo() {
                                     name="precio"
                                     className="form-control"
                                     min="0"
+                                    step="any"
                                     value={formulario.precio}
                                     onChange={manejarCambio}
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -184,12 +276,14 @@ export default function AdminProductoNuevo() {
                                     name="stock"
                                     className="form-control"
                                     min="0"
+                                    step="1"
                                     value={formulario.stock}
                                     onChange={manejarCambio}
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -206,12 +300,17 @@ export default function AdminProductoNuevo() {
                                     name="stockCritico"
                                     className="form-control"
                                     min="0"
+                                    step="1"
                                     value={formulario.stockCritico}
                                     onChange={manejarCambio}
-                                    required
                                 />
 
+                                <div className="form-text">
+                                    Opcional.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-6">
 
@@ -230,21 +329,28 @@ export default function AdminProductoNuevo() {
                                     onChange={manejarCambio}
                                     required
                                 >
+
                                     <option value="">
                                         Selecciona una categoría
                                     </option>
 
-                                    {categorias.map((categoria) => (
-                                        <option
-                                            key={categoria.id}
-                                            value={categoria.nombre}
-                                        >
-                                            {categoria.nombre}
-                                        </option>
-                                    ))}
+                                    {categorias.map(
+                                        (categoria) => (
+
+                                            <option
+                                                key={categoria.id}
+                                                value={categoria.nombre}
+                                            >
+                                                {categoria.nombre}
+                                            </option>
+
+                                        )
+                                    )}
+
                                 </select>
 
                             </div>
+
 
                             <div className="col-md-6">
 
@@ -263,12 +369,16 @@ export default function AdminProductoNuevo() {
                                     placeholder="/images/producto.png"
                                     value={formulario.imagen}
                                     onChange={manejarCambio}
-                                    required
                                 />
+
+                                <div className="form-text">
+                                    Opcional. Si se deja vacío se utilizará una imagen genérica.
+                                </div>
 
                             </div>
 
                         </div>
+
 
                         <div className="d-flex gap-2 mt-4">
 

@@ -38,6 +38,13 @@ import Perfil from './pages/Perfil';
 import Categorias from './pages/Categorias';
 
 import AdminCategorias from './pages/AdminCategorias';
+import AdminUsuarios from './pages/AdminUsuarios';
+import AdminUsuarioDetalle from './pages/AdminUsuarioDetalle';
+import AdminUsuarioEditar from './pages/AdminUsuarioEditar';
+import Ofertas from './pages/Ofertas';
+import AdminReportes from './pages/AdminReportes';
+import AdminUsuarioNuevo from './pages/AdminUsuarioNuevo';
+import BlogDetalle from './pages/BlogDetalle';
 
 function App() {
 
@@ -82,6 +89,14 @@ function App() {
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/categorias" element={<Categorias />} />
                     <Route path="/admin/categorias" element={<RutaAdmin><AdminCategorias /></RutaAdmin>} />
+                    <Route path="/admin/usuarios" element={<RutaAdmin><AdminUsuarios /></RutaAdmin>} />
+                    <Route path="/admin/usuarios/:id" element={<RutaAdmin><AdminUsuarioDetalle /></RutaAdmin>} />
+                    <Route path="/admin/usuarios/:id/editar" element={<RutaAdmin><AdminUsuarioEditar /></RutaAdmin>} />
+                    <Route path="/ofertas" element={<Ofertas />} />
+                    <Route path="/admin/reportes" element={<RutaAdmin><AdminReportes /></RutaAdmin>} />
+                    <Route path="/admin/usuarios/nuevo" element={<RutaAdmin><AdminUsuarioNuevo /></RutaAdmin>} />
+                    <Route path="/blog/:id" element={<BlogDetalle />} />
+
 
                 </Routes>
 

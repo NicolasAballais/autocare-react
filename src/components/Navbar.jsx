@@ -66,6 +66,15 @@ export default function Navbar() {
                         <li className="nav-item">
                             <Link
                                 className="nav-link"
+                                to="/ofertas"
+                            >
+                                Ofertas
+                            </Link>
+                        </li>
+
+                        <li className="nav-item">
+                            <Link
+                                className="nav-link"
                                 to="/ordenes"
                             >
                                 Mis órdenes

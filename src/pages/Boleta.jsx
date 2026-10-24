@@ -1,13 +1,25 @@
 import { Link, useParams } from 'react-router-dom';
-import { obtenerOrdenes } from '../data/ordenes';
+
+import {
+    obtenerOrdenes,
+    ordenPerteneceAUsuario
+} from '../data/ordenes';
+
+import {
+    obtenerSesion
+} from '../data/usuarios';
+
 
 export default function Boleta() {
 
     const { id } = useParams();
 
+    const sesion = obtenerSesion();
+
     const orden = obtenerOrdenes().find(
         (item) => item.id === Number(id)
     );
+
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
@@ -15,24 +27,69 @@ export default function Boleta() {
         maximumFractionDigits: 0
     });
 
-    if (!orden) {
+
+    const nombreMetodoPago = {
+        credito: 'Tarjeta de crédito',
+        debito: 'Tarjeta de débito',
+        transferencia: 'Transferencia bancaria'
+    };
+
+
+    if (!sesion) {
+
         return (
             <main className="container my-5 text-center">
 
-                <h1>
-                    Boleta no encontrada
-                </h1>
+                <div className="alert alert-warning">
+                    Debes iniciar sesión para consultar una boleta.
+                </div>
 
                 <Link
-                    to="/ordenes"
-                    className="btn btn-danger mt-3"
+                    to="/login"
+                    className="btn btn-danger"
                 >
-                    Volver a mis órdenes
+                    Iniciar sesión
                 </Link>
 
             </main>
         );
     }
+
+
+    if (
+        !orden ||
+        !ordenPerteneceAUsuario(
+            orden,
+            sesion
+        )
+    ) {
+
+        return (
+            <main className="container my-5 text-center">
+
+                <h1>
+                    Boleta no disponible
+                </h1>
+
+                <p className="text-muted">
+                    La boleta no existe o no tienes permiso para consultarla.
+                </p>
+
+                <Link
+                    to={
+                        sesion.rol === 'admin'
+                            ? '/admin/ordenes'
+                            : '/ordenes'
+                    }
+                    className="btn btn-danger mt-3"
+                >
+                    Volver
+                </Link>
+
+            </main>
+        );
+    }
+
 
     return (
         <main className="container my-5">
@@ -41,51 +98,39 @@ export default function Boleta() {
 
                 <div className="card-body p-4">
 
-                    <div className="text-center mb-4">
+                    <div className="d-flex justify-content-between align-items-start mb-4">
 
-                        <h2>
-                            AutoCare
-                            <span className="text-danger">
-                                Pro
-                            </span>
-                        </h2>
+                        <div>
 
-                        <p className="mb-1">
-                            Boleta de compra
-                        </p>
+                            <h1 className="mb-1">
+                                Boleta AutoCarePro
+                            </h1>
 
-                        <p className="text-muted">
-                            Orden #{orden.id}
-                        </p>
-
-                    </div>
-
-                    <hr />
-
-                    <div className="row mb-4">
-
-                        <div className="col-md-6">
-
-                            <h5>
-                                Datos de la compra
-                            </h5>
-
-                            <p className="mb-1">
-                                <strong>Fecha:</strong>{' '}
-                                {orden.fecha}
-                            </p>
-
-                            <p className="mb-1">
-                                <strong>Estado:</strong>{' '}
-                                {orden.estado}
-                            </p>
-
-                            <p className="mb-0">
-                                <strong>Método de pago:</strong>{' '}
-                                {orden.metodoPago}
+                            <p className="text-muted mb-0">
+                                Comprobante de compra
                             </p>
 
                         </div>
+
+                        <div className="text-end">
+
+                            <strong>
+                                Orden #{orden.id}
+                            </strong>
+
+                            <div className="text-muted">
+                                {orden.fecha}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <hr />
+
+
+                    <div className="row mb-4">
 
                         <div className="col-md-6">
 
@@ -93,31 +138,43 @@ export default function Boleta() {
                                 Cliente
                             </h5>
 
-                            {orden.cliente ? (
-                                <>
-                                    <p className="mb-1">
-                                        {orden.cliente.nombre}
-                                    </p>
+                            <p className="mb-1">
+                                {orden.cliente?.nombre || 'No especificado'}
+                            </p>
 
-                                    <p className="mb-1">
-                                        {orden.cliente.correo}
-                                    </p>
+                            <p className="mb-1">
+                                {orden.cliente?.correo || 'No especificado'}
+                            </p>
 
-                                    <p className="mb-0">
-                                        {orden.cliente.direccion},
-                                        {' '}
-                                        {orden.cliente.comuna}
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-muted">
-                                    Sin datos registrados.
-                                </p>
-                            )}
+                            <p className="mb-0">
+                                {orden.cliente?.telefono || 'No especificado'}
+                            </p>
+
+                        </div>
+
+
+                        <div className="col-md-6">
+
+                            <h5>
+                                Entrega
+                            </h5>
+
+                            <p className="mb-1">
+                                {orden.cliente?.direccion || 'No especificada'}
+                            </p>
+
+                            <p className="mb-1">
+                                {orden.cliente?.comuna || 'No especificada'}
+                            </p>
+
+                            <p className="mb-0">
+                                {orden.tipoEntrega || 'No especificada'}
+                            </p>
 
                         </div>
 
                     </div>
+
 
                     <div className="table-responsive">
 
@@ -126,21 +183,10 @@ export default function Boleta() {
                             <thead>
 
                                 <tr>
-                                    <th>
-                                        Producto
-                                    </th>
-
-                                    <th className="text-center">
-                                        Cantidad
-                                    </th>
-
-                                    <th className="text-end">
-                                        Precio
-                                    </th>
-
-                                    <th className="text-end">
-                                        Subtotal
-                                    </th>
+                                    <th>Producto</th>
+                                    <th>Precio</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
                                 </tr>
 
                             </thead>
@@ -155,24 +201,16 @@ export default function Boleta() {
                                             {producto.nombre}
                                         </td>
 
-                                        <td className="text-center">
+                                        <td>
+                                            {formatoPrecio.format(producto.precio)}
+                                        </td>
+
+                                        <td>
                                             {producto.cantidad}
                                         </td>
 
-                                        <td className="text-end">
-                                            {
-                                                formatoPrecio.format(
-                                                    producto.precio
-                                                )
-                                            }
-                                        </td>
-
-                                        <td className="text-end">
-                                            {
-                                                formatoPrecio.format(
-                                                    producto.subtotal
-                                                )
-                                            }
+                                        <td>
+                                            {formatoPrecio.format(producto.subtotal)}
                                         </td>
 
                                     </tr>
@@ -185,27 +223,72 @@ export default function Boleta() {
 
                     </div>
 
-                    <hr />
 
-                    <div className="text-end">
+                    <div className="row mt-4">
 
-                        <h3 className="text-danger">
-                            Total: {
-                                formatoPrecio.format(
-                                    orden.total
-                                )
-                            }
-                        </h3>
+                        <div className="col-md-6">
+
+                            <p className="mb-1">
+
+                                <strong>
+                                    Método de pago:
+                                </strong>{' '}
+
+                                {nombreMetodoPago[orden.metodoPago]
+                                    || orden.metodoPago
+                                    || 'No especificado'}
+
+                            </p>
+
+                            <p className="mb-0">
+
+                                <strong>
+                                    Estado:
+                                </strong>{' '}
+
+                                {orden.estado}
+
+                            </p>
+
+                        </div>
+
+
+                        <div className="col-md-6 text-md-end">
+
+                            <h3>
+                                Total:
+                                {' '}
+                                <span className="text-danger">
+                                    {formatoPrecio.format(orden.total)}
+                                </span>
+                            </h3>
+
+                        </div>
 
                     </div>
 
-                    <div className="mt-4">
+
+                    <hr />
+
+
+                    <div className="d-flex justify-content-center gap-2">
 
                         <Link
                             to={`/ordenes/${orden.id}`}
+                            className="btn btn-outline-primary"
+                        >
+                            Volver a la orden
+                        </Link>
+
+                        <Link
+                            to={
+                                sesion.rol === 'admin'
+                                    ? '/admin/ordenes'
+                                    : '/ordenes'
+                            }
                             className="btn btn-outline-secondary"
                         >
-                            Volver al detalle
+                            Volver
                         </Link>
 
                     </div>

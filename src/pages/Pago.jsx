@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
 import { useCarrito } from '../context/CarritoContext';
+
 import {
     obtenerProductos,
     guardarProductos
 } from '../data/productos';
-import { guardarOrden } from '../data/ordenes';
+
+import {
+    guardarOrden
+} from '../data/ordenes';
+
 
 export default function Pago() {
 
@@ -23,55 +29,77 @@ export default function Pago() {
     const datosCliente =
         location.state?.datosCliente || {};
 
+    const tipoEntrega =
+        location.state?.tipoEntrega || 'No especificada';
+
+
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP',
         maximumFractionDigits: 0
     });
 
-    const descontarStock = () => {
 
-        const productos = obtenerProductos();
+    const obtenerProductosOrden = () => {
 
-        const productosActualizados = productos.map((producto) => {
-
-            const productoCarrito = carrito.find(
-                (item) => item.id === producto.id
-            );
-
-            if (!productoCarrito) {
-                return producto;
-            }
-
-            return {
-                ...producto,
-                stock: Math.max(
-                    0,
-                    producto.stock - productoCarrito.cantidad
-                )
-            };
-        });
-
-        guardarProductos(productosActualizados);
-    };
-
-    const crearOrden = () => {
-
-        const productosOrden = carrito.map((item) => ({
+        return carrito.map((item) => ({
             id: item.id,
             nombre: item.nombre,
             precio: item.precio,
             cantidad: item.cantidad,
-            subtotal: item.precio * item.cantidad
+            subtotal:
+                item.precio * item.cantidad
         }));
+    };
 
-        guardarOrden({
+
+    const descontarStock = () => {
+
+        const productos = obtenerProductos();
+
+        const productosActualizados =
+            productos.map((producto) => {
+
+                const productoCarrito =
+                    carrito.find(
+                        (item) =>
+                            item.id === producto.id
+                    );
+
+                if (!productoCarrito) {
+                    return producto;
+                }
+
+                return {
+                    ...producto,
+                    stock: Math.max(
+                        0,
+                        producto.stock -
+                        productoCarrito.cantidad
+                    )
+                };
+            });
+
+        guardarProductos(
+            productosActualizados
+        );
+    };
+
+
+    const crearOrden = () => {
+
+        const productosOrden =
+            obtenerProductosOrden();
+
+        return guardarOrden({
             cliente: datosCliente,
             productos: productosOrden,
             total,
-            metodoPago
+            metodoPago,
+            tipoEntrega
         });
     };
+
 
     const procesarPago = () => {
 
@@ -79,19 +107,45 @@ export default function Pago() {
             return;
         }
 
-        // Simulación de pago rechazado
+        const productosOrden =
+            obtenerProductosOrden();
+
+
+        /* PAGO RECHAZADO */
+
         if (metodoPago === 'credito') {
-            navigate('/pago-error');
+
+            navigate('/pago-error', {
+                state: {
+                    cliente: datosCliente,
+                    productos: productosOrden,
+                    total,
+                    metodoPago,
+                    tipoEntrega
+                }
+            });
+
             return;
         }
 
-        // Compra exitosa
-        crearOrden();
+
+        /* PAGO EXITOSO */
+
+        const nuevaOrden =
+            crearOrden();
+
         descontarStock();
+
         vaciarCarrito();
 
-        navigate('/compra-exitosa');
+
+        navigate('/compra-exitosa', {
+            state: {
+                orden: nuevaOrden
+            }
+        });
     };
+
 
     return (
         <main className="container my-5">
@@ -99,6 +153,7 @@ export default function Pago() {
             <h1 className="mb-4">
                 Pago
             </h1>
+
 
             <div className="row g-4">
 
@@ -112,6 +167,7 @@ export default function Pago() {
                                 Selecciona un método de pago
                             </h4>
 
+
                             <div className="form-check mb-3">
 
                                 <input
@@ -120,9 +176,13 @@ export default function Pago() {
                                     name="metodoPago"
                                     id="credito"
                                     value="credito"
-                                    checked={metodoPago === 'credito'}
+                                    checked={
+                                        metodoPago === 'credito'
+                                    }
                                     onChange={(event) =>
-                                        setMetodoPago(event.target.value)
+                                        setMetodoPago(
+                                            event.target.value
+                                        )
                                     }
                                 />
 
@@ -135,6 +195,7 @@ export default function Pago() {
 
                             </div>
 
+
                             <div className="form-check mb-3">
 
                                 <input
@@ -143,9 +204,13 @@ export default function Pago() {
                                     name="metodoPago"
                                     id="debito"
                                     value="debito"
-                                    checked={metodoPago === 'debito'}
+                                    checked={
+                                        metodoPago === 'debito'
+                                    }
                                     onChange={(event) =>
-                                        setMetodoPago(event.target.value)
+                                        setMetodoPago(
+                                            event.target.value
+                                        )
                                     }
                                 />
 
@@ -158,6 +223,7 @@ export default function Pago() {
 
                             </div>
 
+
                             <div className="form-check">
 
                                 <input
@@ -166,9 +232,13 @@ export default function Pago() {
                                     name="metodoPago"
                                     id="transferencia"
                                     value="transferencia"
-                                    checked={metodoPago === 'transferencia'}
+                                    checked={
+                                        metodoPago === 'transferencia'
+                                    }
                                     onChange={(event) =>
-                                        setMetodoPago(event.target.value)
+                                        setMetodoPago(
+                                            event.target.value
+                                        )
                                     }
                                 />
 
@@ -187,6 +257,7 @@ export default function Pago() {
 
                 </section>
 
+
                 <aside className="col-lg-4">
 
                     <div className="card shadow-sm">
@@ -199,13 +270,26 @@ export default function Pago() {
 
                             <hr />
 
+
+                            <p className="mb-1">
+                                Entrega:
+                            </p>
+
                             <p>
+                                <strong>
+                                    {tipoEntrega}
+                                </strong>
+                            </p>
+
+
+                            <p className="mb-1">
                                 Total a pagar:
                             </p>
 
                             <h3 className="text-danger">
                                 {formatoPrecio.format(total)}
                             </h3>
+
 
                             <button
                                 type="button"

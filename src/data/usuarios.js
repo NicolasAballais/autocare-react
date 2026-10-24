@@ -12,6 +12,7 @@ const USUARIOS_INICIALES = [
     }
 ];
 
+
 export function obtenerUsuarios() {
 
     const datos = localStorage.getItem(CLAVE_USUARIOS);
@@ -35,7 +36,8 @@ export function registrarUsuario(usuario) {
 
     const correoExiste = usuarios.some(
         (item) =>
-            item.correo.toLowerCase() === usuario.correo.toLowerCase()
+            item.correo.toLowerCase() ===
+            usuario.correo.toLowerCase()
     );
 
     if (correoExiste) {
@@ -75,8 +77,10 @@ export function iniciarSesion(correo, password) {
 
     const usuario = usuarios.find(
         (item) =>
-            item.correo.toLowerCase() === correo.toLowerCase()
-            && item.password === password
+            item.correo.toLowerCase() ===
+            correo.toLowerCase()
+            &&
+            item.password === password
     );
 
     if (!usuario) {
@@ -101,9 +105,12 @@ export function iniciarSesion(correo, password) {
 
 export function obtenerSesion() {
 
-    const datos = localStorage.getItem(CLAVE_SESION);
+    const datos =
+        localStorage.getItem(CLAVE_SESION);
 
-    return datos ? JSON.parse(datos) : null;
+    return datos
+        ? JSON.parse(datos)
+        : null;
 }
 
 
@@ -113,40 +120,196 @@ export function cerrarSesion() {
 }
 
 
-export function actualizarUsuarioPerfil(id, datosActualizados) {
+export function actualizarUsuarioPerfil(
+    id,
+    datosActualizados
+) {
 
     const usuarios = obtenerUsuarios();
 
-    const usuariosActualizados = usuarios.map((usuario) => {
+    const usuariosActualizados =
+        usuarios.map((usuario) => {
 
-        if (usuario.id !== Number(id)) {
-            return usuario;
-        }
+            if (
+                usuario.id !== Number(id)
+            ) {
+                return usuario;
+            }
 
-        return {
-            ...usuario,
-            ...datosActualizados
-        };
-    });
+            return {
+                ...usuario,
+                ...datosActualizados
+            };
+        });
 
     localStorage.setItem(
         CLAVE_USUARIOS,
-        JSON.stringify(usuariosActualizados)
+        JSON.stringify(
+            usuariosActualizados
+        )
     );
 
-    const usuarioActualizado = usuariosActualizados.find(
-        (usuario) => usuario.id === Number(id)
-    );
+    const usuarioActualizado =
+        usuariosActualizados.find(
+            (usuario) =>
+                usuario.id === Number(id)
+        );
 
     const sesion = obtenerSesion();
 
-    if (sesion && sesion.id === Number(id)) {
+    if (
+        sesion &&
+        sesion.id === Number(id)
+    ) {
 
         localStorage.setItem(
             CLAVE_SESION,
-            JSON.stringify(usuarioActualizado)
+            JSON.stringify(
+                usuarioActualizado
+            )
         );
     }
 
     return usuarioActualizado;
+}
+
+
+/* =========================================
+   FUNCIONES PARA ADMINISTRACIÓN DE USUARIOS
+   ========================================= */
+
+
+export function obtenerUsuarioPorId(id) {
+
+    const usuarios = obtenerUsuarios();
+
+    return usuarios.find(
+        (usuario) =>
+            usuario.id === Number(id)
+    ) || null;
+}
+
+
+export function obtenerClientes() {
+
+    const usuarios = obtenerUsuarios();
+
+    return usuarios.filter(
+        (usuario) =>
+            usuario.rol === 'cliente'
+    );
+}
+
+
+export function actualizarUsuarioAdmin(
+    id,
+    datosActualizados
+) {
+
+    const usuarios = obtenerUsuarios();
+
+    const usuarioActual =
+        usuarios.find(
+            (usuario) =>
+                usuario.id === Number(id)
+        );
+
+    if (!usuarioActual) {
+
+        return {
+            exito: false,
+            mensaje: 'Usuario no encontrado.'
+        };
+    }
+
+    const correoNuevo =
+        datosActualizados.correo
+            .trim()
+            .toLowerCase();
+
+    const correoDuplicado =
+        usuarios.some(
+            (usuario) =>
+                usuario.id !== Number(id)
+                &&
+                usuario.correo.toLowerCase() ===
+                    correoNuevo
+        );
+
+    if (correoDuplicado) {
+
+        return {
+            exito: false,
+            mensaje:
+                'Ya existe otro usuario con ese correo.'
+        };
+    }
+
+    const usuariosActualizados =
+        usuarios.map((usuario) => {
+
+            if (
+                usuario.id !== Number(id)
+            ) {
+                return usuario;
+            }
+
+            return {
+                ...usuario,
+
+                nombre:
+                    datosActualizados.nombre.trim(),
+
+                apellido:
+                    datosActualizados.apellido.trim(),
+
+                correo:
+                    datosActualizados.correo.trim(),
+
+                telefono:
+                    datosActualizados.telefono
+                        ?.trim() || '',
+
+                comuna:
+                    datosActualizados.comuna
+                        ?.trim() || '',
+
+                direccion:
+                    datosActualizados.direccion
+                        ?.trim() || ''
+            };
+        });
+
+    localStorage.setItem(
+        CLAVE_USUARIOS,
+        JSON.stringify(
+            usuariosActualizados
+        )
+    );
+
+    const usuarioActualizado =
+        usuariosActualizados.find(
+            (usuario) =>
+                usuario.id === Number(id)
+        );
+
+    const sesion = obtenerSesion();
+
+    if (
+        sesion &&
+        sesion.id === Number(id)
+    ) {
+
+        localStorage.setItem(
+            CLAVE_SESION,
+            JSON.stringify(
+                usuarioActualizado
+            )
+        );
+    }
+
+    return {
+        exito: true,
+        usuario: usuarioActualizado
+    };
 }

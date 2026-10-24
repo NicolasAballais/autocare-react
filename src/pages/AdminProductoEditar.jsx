@@ -1,126 +1,242 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+    Link,
+    useNavigate,
+    useParams
+} from 'react-router-dom';
 
 import {
     obtenerProductos,
     guardarProductos
 } from '../data/productos';
 
-import { obtenerCategorias } from '../data/categorias';
+import {
+    obtenerCategorias
+} from '../data/categorias';
+
 
 export default function AdminProductoEditar() {
 
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const productos = obtenerProductos();
     const categorias = obtenerCategorias();
 
-    const productoEncontrado = productos.find(
-        (producto) => producto.id === Number(id)
+    const productos = obtenerProductos();
+
+    const producto = productos.find(
+        (item) =>
+            item.id === Number(id)
     );
 
-    const [formulario, setFormulario] = useState(
-        productoEncontrado
-            ? {
-                codigo: productoEncontrado.codigo,
-                nombre: productoEncontrado.nombre,
-                descripcion: productoEncontrado.descripcion,
-                precio: productoEncontrado.precio,
-                stock: productoEncontrado.stock,
-                stockCritico: productoEncontrado.stockCritico ?? '',
-                categoria: productoEncontrado.categoria,
-                imagen: productoEncontrado.imagen
-            }
-            : null
-    );
 
-    if (!productoEncontrado || !formulario) {
+    const [formulario, setFormulario] = useState({
+
+        codigo:
+            producto?.codigo || '',
+
+        nombre:
+            producto?.nombre || '',
+
+        descripcion:
+            producto?.descripcion || '',
+
+        precio:
+            producto?.precio ?? '',
+
+        stock:
+            producto?.stock ?? '',
+
+        stockCritico:
+            producto?.stockCritico ?? '',
+
+        categoria:
+            producto?.categoria || '',
+
+        imagen:
+            producto?.imagen || ''
+    });
+
+
+    if (!producto) {
+
         return (
-            <main className="container my-5 text-center">
+            <main className="container my-5">
 
-                <h1>Producto no encontrado</h1>
+                <div className="alert alert-danger">
+                    Producto no encontrado.
+                </div>
 
-                <button
-                    type="button"
-                    className="btn btn-outline-secondary mt-3"
-                    onClick={() =>
-                        navigate('/admin/productos')
-                    }
+                <Link
+                    to="/admin/productos"
+                    className="btn btn-secondary"
                 >
-                    Volver
-                </button>
+                    Volver a productos
+                </Link>
 
             </main>
         );
     }
 
-    const manejarCambio = (event) => {
 
-        const { name, value } = event.target;
+    function manejarCambio(evento) {
+
+        const { name, value } =
+            evento.target;
 
         setFormulario({
             ...formulario,
             [name]: value
         });
-    };
+    }
 
-    const actualizarProducto = (event) => {
 
-        event.preventDefault();
+    function guardarCambios(evento) {
 
-        const codigoDuplicado = productos.some(
-            (producto) =>
-                producto.id !== productoEncontrado.id &&
-                producto.codigo.toLowerCase() ===
-                    formulario.codigo.trim().toLowerCase()
-        );
+        evento.preventDefault();
 
-        if (codigoDuplicado) {
-            alert('Ya existe otro producto con ese código.');
+
+        const codigo =
+            formulario.codigo.trim();
+
+        const nombre =
+            formulario.nombre.trim();
+
+
+        if (codigo.length < 3) {
+
+            alert(
+                'El código debe tener al menos 3 caracteres.'
+            );
+
             return;
         }
 
-        const productosActualizados = productos.map(
-            (producto) => {
 
-                if (producto.id !== productoEncontrado.id) {
-                    return producto;
+        if (!nombre) {
+
+            alert(
+                'El nombre del producto es obligatorio.'
+            );
+
+            return;
+        }
+
+
+        const codigoExiste =
+            productos.some(
+                (item) =>
+                    item.id !== producto.id
+                    &&
+                    item.codigo
+                        .toLowerCase() ===
+                    codigo.toLowerCase()
+            );
+
+
+        if (codigoExiste) {
+
+            alert(
+                'Ya existe otro producto con ese código.'
+            );
+
+            return;
+        }
+
+
+        const productosActualizados =
+            productos.map((item) => {
+
+                if (
+                    item.id !== producto.id
+                ) {
+                    return item;
                 }
 
+
                 return {
-                    ...producto,
-                    codigo: formulario.codigo.trim(),
-                    nombre: formulario.nombre.trim(),
-                    descripcion: formulario.descripcion.trim(),
-                    precio: Number(formulario.precio),
-                    stock: Number(formulario.stock),
-                    stockCritico: Number(formulario.stockCritico),
-                    categoria: formulario.categoria,
-                    imagen: formulario.imagen.trim()
+
+                    ...item,
+
+                    codigo,
+
+                    nombre,
+
+                    descripcion:
+                        formulario.descripcion.trim(),
+
+                    precio:
+                        Number(formulario.precio),
+
+                    stock:
+                        Number(formulario.stock),
+
+                    stockCritico:
+                        formulario.stockCritico === ''
+                            ? 0
+                            : Number(
+                                formulario.stockCritico
+                            ),
+
+                    categoria:
+                        formulario.categoria,
+
+                    imagen:
+                        formulario.imagen.trim()
+                        || '/images/Tienda.png'
                 };
-            }
+            });
+
+
+        guardarProductos(
+            productosActualizados
         );
 
-        guardarProductos(productosActualizados);
 
-        navigate('/admin/productos');
-    };
+        navigate(
+            '/admin/productos'
+        );
+    }
+
 
     return (
         <main className="container my-5">
 
-            <h1 className="mb-4">
-                Editar Producto
-            </h1>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+
+                    <h1 className="mb-1">
+                        Editar Producto
+                    </h1>
+
+                    <p className="text-muted mb-0">
+                        Modifica la información del producto.
+                    </p>
+
+                </div>
+
+
+                <Link
+                    to="/admin/productos"
+                    className="btn btn-outline-secondary"
+                >
+                    Volver
+                </Link>
+
+            </div>
+
 
             <div className="card shadow-sm">
 
                 <div className="card-body">
 
-                    <form onSubmit={actualizarProducto}>
+                    <form
+                        onSubmit={guardarCambios}
+                    >
 
                         <div className="row g-3">
+
 
                             <div className="col-md-4">
 
@@ -138,10 +254,16 @@ export default function AdminProductoEditar() {
                                     className="form-control"
                                     value={formulario.codigo}
                                     onChange={manejarCambio}
+                                    minLength="3"
                                     required
                                 />
 
+                                <div className="form-text">
+                                    Mínimo 3 caracteres.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-8">
 
@@ -159,10 +281,12 @@ export default function AdminProductoEditar() {
                                     className="form-control"
                                     value={formulario.nombre}
                                     onChange={manejarCambio}
+                                    maxLength="100"
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-12">
 
@@ -180,10 +304,15 @@ export default function AdminProductoEditar() {
                                     rows="3"
                                     value={formulario.descripcion}
                                     onChange={manejarCambio}
-                                    required
+                                    maxLength="500"
                                 />
 
+                                <div className="form-text">
+                                    Opcional. Máximo 500 caracteres.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -200,12 +329,14 @@ export default function AdminProductoEditar() {
                                     name="precio"
                                     className="form-control"
                                     min="0"
+                                    step="any"
                                     value={formulario.precio}
                                     onChange={manejarCambio}
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -222,12 +353,14 @@ export default function AdminProductoEditar() {
                                     name="stock"
                                     className="form-control"
                                     min="0"
+                                    step="1"
                                     value={formulario.stock}
                                     onChange={manejarCambio}
                                     required
                                 />
 
                             </div>
+
 
                             <div className="col-md-4">
 
@@ -244,12 +377,17 @@ export default function AdminProductoEditar() {
                                     name="stockCritico"
                                     className="form-control"
                                     min="0"
+                                    step="1"
                                     value={formulario.stockCritico}
                                     onChange={manejarCambio}
-                                    required
                                 />
 
+                                <div className="form-text">
+                                    Opcional.
+                                </div>
+
                             </div>
+
 
                             <div className="col-md-6">
 
@@ -273,20 +411,23 @@ export default function AdminProductoEditar() {
                                         Selecciona una categoría
                                     </option>
 
-                                    {categorias.map((categoria) => (
+                                    {categorias.map(
+                                        (categoria) => (
 
-                                        <option
-                                            key={categoria.id}
-                                            value={categoria.nombre}
-                                        >
-                                            {categoria.nombre}
-                                        </option>
+                                            <option
+                                                key={categoria.id}
+                                                value={categoria.nombre}
+                                            >
+                                                {categoria.nombre}
+                                            </option>
 
-                                    ))}
+                                        )
+                                    )}
 
                                 </select>
 
                             </div>
+
 
                             <div className="col-md-6">
 
@@ -304,18 +445,22 @@ export default function AdminProductoEditar() {
                                     className="form-control"
                                     value={formulario.imagen}
                                     onChange={manejarCambio}
-                                    required
                                 />
+
+                                <div className="form-text">
+                                    Opcional. Si queda vacío se utilizará una imagen genérica.
+                                </div>
 
                             </div>
 
                         </div>
 
+
                         <div className="d-flex gap-2 mt-4">
 
                             <button
                                 type="submit"
-                                className="btn btn-danger"
+                                className="btn btn-primary"
                             >
                                 Guardar cambios
                             </button>

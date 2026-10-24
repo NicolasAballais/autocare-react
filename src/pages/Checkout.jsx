@@ -25,6 +25,8 @@ export default function Checkout() {
         comuna: sesion?.comuna || ''
     });
 
+    const [tipoEntrega, setTipoEntrega] = useState('');
+
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP',
@@ -47,7 +49,8 @@ export default function Checkout() {
 
         navigate('/pago', {
             state: {
-                datosCliente
+                datosCliente,
+                tipoEntrega
             }
         });
     };
@@ -192,6 +195,57 @@ export default function Checkout() {
 
                                     </div>
 
+
+                                    <div className="col-12">
+
+                                        <hr className="my-3" />
+
+                                        <h5>
+                                            Opción de entrega
+                                        </h5>
+
+                                        <p className="text-muted">
+                                            Selecciona cómo deseas recibir tu compra.
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="col-12">
+
+                                        <label
+                                            htmlFor="tipoEntrega"
+                                            className="form-label"
+                                        >
+                                            Método de entrega
+                                        </label>
+
+                                        <select
+                                            id="tipoEntrega"
+                                            className="form-select"
+                                            value={tipoEntrega}
+                                            onChange={(event) =>
+                                                setTipoEntrega(event.target.value)
+                                            }
+                                            required
+                                        >
+
+                                            <option value="">
+                                                Selecciona una opción
+                                            </option>
+
+                                            <option value="Envío estándar">
+                                                Envío estándar - 2 a 5 días hábiles
+                                            </option>
+
+                                            <option value="Envío express">
+                                                Envío express - 24 a 48 horas
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
                                 </div>
 
                             </div>
@@ -199,6 +253,7 @@ export default function Checkout() {
                         </div>
 
                     </section>
+
 
                     <aside className="col-lg-4">
 
@@ -219,6 +274,14 @@ export default function Checkout() {
                                 <p>
                                     Cantidad total: {cantidadTotal}
                                 </p>
+
+                                {tipoEntrega && (
+
+                                    <p>
+                                        Entrega: <strong>{tipoEntrega}</strong>
+                                    </p>
+
+                                )}
 
                                 <hr />
 

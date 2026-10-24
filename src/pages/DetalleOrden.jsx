@@ -1,13 +1,25 @@
 import { Link, useParams } from 'react-router-dom';
-import { obtenerOrdenes } from '../data/ordenes';
+
+import {
+    obtenerOrdenes,
+    ordenPerteneceAUsuario
+} from '../data/ordenes';
+
+import {
+    obtenerSesion
+} from '../data/usuarios';
+
 
 export default function DetalleOrden() {
 
     const { id } = useParams();
 
+    const sesion = obtenerSesion();
+
     const orden = obtenerOrdenes().find(
         (item) => item.id === Number(id)
     );
+
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
@@ -15,24 +27,62 @@ export default function DetalleOrden() {
         maximumFractionDigits: 0
     });
 
-    if (!orden) {
+
+    if (!sesion) {
+
         return (
             <main className="container my-5 text-center">
 
-                <h1>
-                    Orden no encontrada
-                </h1>
+                <div className="alert alert-warning">
+                    Debes iniciar sesión para consultar una orden.
+                </div>
 
                 <Link
-                    to="/ordenes"
-                    className="btn btn-danger mt-3"
+                    to="/login"
+                    className="btn btn-danger"
                 >
-                    Volver a mis órdenes
+                    Iniciar sesión
                 </Link>
 
             </main>
         );
     }
+
+
+    if (
+        !orden ||
+        !ordenPerteneceAUsuario(
+            orden,
+            sesion
+        )
+    ) {
+
+        return (
+            <main className="container my-5 text-center">
+
+                <h1>
+                    Orden no disponible
+                </h1>
+
+                <p className="text-muted">
+                    La orden no existe o no tienes permiso para consultarla.
+                </p>
+
+                <Link
+                    to={
+                        sesion.rol === 'admin'
+                            ? '/admin/ordenes'
+                            : '/ordenes'
+                    }
+                    className="btn btn-danger mt-3"
+                >
+                    Volver
+                </Link>
+
+            </main>
+        );
+    }
+
 
     return (
         <main className="container my-5">
@@ -51,11 +101,18 @@ export default function DetalleOrden() {
 
                 </div>
 
-                <span className="badge text-bg-warning">
+                <span
+                    className={
+                        orden.estado === 'Enviado'
+                            ? 'badge text-bg-success'
+                            : 'badge text-bg-warning'
+                    }
+                >
                     {orden.estado}
                 </span>
 
             </div>
+
 
             <div className="card shadow-sm mb-4">
 
@@ -81,7 +138,8 @@ export default function DetalleOrden() {
                                     </h5>
 
                                     <p className="mb-1">
-                                        Precio unitario: {
+                                        Precio unitario:{' '}
+                                        {
                                             formatoPrecio.format(
                                                 producto.precio
                                             )
@@ -111,6 +169,7 @@ export default function DetalleOrden() {
                 </div>
 
             </div>
+
 
             <div className="row g-4">
 
@@ -149,9 +208,14 @@ export default function DetalleOrden() {
                                         {orden.cliente.comuna}
                                     </p>
 
-                                    <p className="mb-0">
+                                    <p>
                                         <strong>Dirección:</strong>{' '}
                                         {orden.cliente.direccion}
+                                    </p>
+
+                                    <p className="mb-0">
+                                        <strong>Método de entrega:</strong>{' '}
+                                        {orden.tipoEntrega || 'No especificado'}
                                     </p>
                                 </>
 
@@ -168,6 +232,7 @@ export default function DetalleOrden() {
                     </div>
 
                 </div>
+
 
                 <div className="col-lg-5">
 
@@ -186,7 +251,8 @@ export default function DetalleOrden() {
                             </p>
 
                             <h3 className="text-danger">
-                                Total: {
+                                Total:{' '}
+                                {
                                     formatoPrecio.format(
                                         orden.total
                                     )
@@ -203,10 +269,14 @@ export default function DetalleOrden() {
                                 </Link>
 
                                 <Link
-                                    to="/ordenes"
+                                    to={
+                                        sesion.rol === 'admin'
+                                            ? '/admin/ordenes'
+                                            : '/ordenes'
+                                    }
                                     className="btn btn-outline-secondary"
                                 >
-                                    Volver a mis órdenes
+                                    Volver
                                 </Link>
 
                             </div>
