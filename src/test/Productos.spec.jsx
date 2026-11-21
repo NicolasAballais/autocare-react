@@ -111,58 +111,57 @@ describe('Página de Productos', () => {
 
     });
 
-});
+    it('filtra productos utilizando el buscador', () => {
 
+        renderizarProductos();
 
-it('filtra productos utilizando el buscador', () => {
+        const buscador = screen.getByPlaceholderText(
+            'Buscar productos por nombre, categoría o descripción...'
+        );
 
-    renderizarProductos();
-
-    const buscador = screen.getByPlaceholderText(
-        'Buscar productos por nombre, categoría o descripción...'
-    );
-
-    fireEvent.change(
-        buscador,
-        {
-            target: {
-                value: 'Ampolleta'
+        fireEvent.change(
+            buscador,
+            {
+                target: {
+                    value: 'Ampolleta'
+                }
             }
-        }
-    );
+        );
 
-    expect(
-        screen.getByText('Ampolleta H7 LED')
-    ).toBeTruthy();
+        expect(
+            screen.getByText('Ampolleta H7 LED')
+        ).toBeTruthy();
 
-    expect(
-        screen.queryByText('Kit Detailing Básico')
-    ).toBeNull();
+        expect(
+            screen.queryByText('Kit Detailing Básico')
+        ).toBeNull();
 
-});
+    });
 
 
-it('permite seleccionar un filtro de categoría', () => {
+    it('permite seleccionar un filtro de categoría', () => {
 
-    renderizarProductos();
+        renderizarProductos();
 
-    const botonCategoria = screen.getByRole(
-        'button',
-        {
-            name: 'Detailing y Limpieza'
-        }
-    );
+        const botonCategoria = screen.getByRole(
+            'button',
+            {
+                name: 'Detailing y Limpieza'
+            }
+        );
 
-    fireEvent.click(
-        botonCategoria
-    );
+        fireEvent.click(
+            botonCategoria
+        );
 
-    expect(
-        screen.getByText('Kit Detailing Básico')
-    ).toBeTruthy();
+        expect(
+            screen.getByText('Kit Detailing Básico')
+        ).toBeTruthy();
 
-    expect(
-        screen.queryByText('Ampolleta H7 LED')
-    ).toBeNull();
+        expect(
+            screen.queryByText('Ampolleta H7 LED')
+        ).toBeNull();
+
+    });
 
 });
