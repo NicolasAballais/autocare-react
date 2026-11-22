@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 
 import { useCarrito } from '../context/CarritoContext';
+import { esIdProductoLocal, mismoIdProducto } from '../services/carritoService.js';
 
 import {
     obtenerProductos,
@@ -124,6 +125,18 @@ export default function Pago() {
         );
     }
 
+    if (carrito.some((item) => !esIdProductoLocal(item.id))) {
+        return (
+            <main className="container my-5">
+                <div className="alert alert-warning" role="alert">
+                    <h4 className="alert-heading">El pago simulado requiere un carrito local</h4>
+                    <p>El carrito contiene productos que requieren un pago conectado.</p>
+                    <Link to="/carrito" className="btn btn-danger">Volver al carrito</Link>
+                </div>
+            </main>
+        );
+    }
+
 
     function obtenerProductosOrden() {
 
@@ -158,9 +171,7 @@ export default function Pago() {
 
                     const productoCarrito =
                         carrito.find(
-                            (item) =>
-                                item.id ===
-                                producto.id
+                            (item) => mismoIdProducto(item.id, producto.id)
                         );
 
 

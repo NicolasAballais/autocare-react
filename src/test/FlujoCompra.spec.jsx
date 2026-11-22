@@ -10,16 +10,17 @@ import {
 
 import Carrito from '../pages/Carrito';
 import Checkout from '../pages/Checkout';
+import Pago from '../pages/Pago';
 
 import {
     CarritoProvider
 } from '../context/CarritoContext';
 
 
-function renderizarConCarrito(componente) {
+function renderizarConCarrito(componente, entrada = '/') {
 
     return render(
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[entrada]}>
             <CarritoProvider>
                 {componente}
             </CarritoProvider>
@@ -96,6 +97,27 @@ describe('Flujo de compra', () => {
             )
         ).toBeTruthy();
 
+    });
+
+    it('bloquea el pago simulado con un ObjectId aunque el carrito incluya productos locales', () => {
+        const carritoGuardado = JSON.stringify([
+            { id: 1, precio: 28000, cantidad: 1 },
+            { id: '6600000000000000000000a1', precio: 28000, cantidad: 1 }
+        ]);
+        const ordenesGuardadas = JSON.stringify([{ id: 123, total: 28000 }]);
+        localStorage.setItem('carritoAutoCare', carritoGuardado);
+        localStorage.setItem('ordenesAutoCare', ordenesGuardadas);
+
+        renderizarConCarrito(<Pago />, {
+            pathname: '/pago',
+            state: { datosCliente: { nombre: 'Cliente de prueba' }, tipoEntrega: 'Envío estándar' }
+        });
+
+        expect(screen.getByRole('alert').textContent).toContain('El pago simulado requiere un carrito local');
+        expect(screen.queryByRole('button', { name: 'Pagar' })).toBeNull();
+        expect(localStorage.getItem('carritoAutoCare')).toBe(carritoGuardado);
+        expect(localStorage.getItem('ordenesAutoCare')).toBe(ordenesGuardadas);
+        expect(localStorage.getItem('productosAutoCare')).toBeNull();
     });
 
 });

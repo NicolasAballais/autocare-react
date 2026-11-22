@@ -2,8 +2,10 @@ import {
     createContext,
     useContext,
     useEffect,
+    useRef,
     useState
 } from 'react';
+import { esIdProductoLocal, mismoIdProducto } from '../services/carritoService.js';
 
 const CarritoContext = createContext();
 
@@ -26,34 +28,39 @@ export function CarritoProvider({ children }) {
 
     const [carrito, setCarrito] =
         useState(obtenerCarritoGuardado);
+    const ultimoCarritoGuardado = useRef(carrito);
 
     useEffect(() => {
+        if (carrito === ultimoCarritoGuardado.current) return;
+
         localStorage.setItem(
             CLAVE_CARRITO,
             JSON.stringify(carrito)
         );
+        ultimoCarritoGuardado.current = carrito;
     }, [carrito]);
 
     const agregarProducto = (producto) => {
+        if (!esIdProductoLocal(producto.id)) return;
 
         setCarrito((carritoActual) => {
 
             const existente =
                 carritoActual.find(
-                    (item) => item.id === producto.id
+                    (item) => mismoIdProducto(item.id, producto.id)
                 );
 
             if (existente) {
 
                 return carritoActual.map((item) => {
 
-                    if (item.id !== producto.id) {
+                    if (!mismoIdProducto(item.id, producto.id)) {
                         return item;
                     }
 
                     const nuevaCantidad =
                         Math.min(
-                            item.cantidad + 1,
+                            Number(item.cantidad) + 1,
                             producto.stock
                         );
 
@@ -77,7 +84,7 @@ export function CarritoProvider({ children }) {
     const eliminarProducto = (id) => {
         setCarrito((carritoActual) =>
             carritoActual.filter(
-                (item) => item.id !== id
+                (item) => !mismoIdProducto(item.id, id)
             )
         );
     };
@@ -87,7 +94,7 @@ export function CarritoProvider({ children }) {
         setCarrito((carritoActual) =>
             carritoActual.map((item) => {
 
-                if (item.id !== id) {
+                if (!mismoIdProducto(item.id, id)) {
                     return item;
                 }
 
