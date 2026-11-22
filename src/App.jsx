@@ -45,6 +45,8 @@ import Ofertas from './pages/Ofertas';
 import AdminReportes from './pages/AdminReportes';
 import AdminUsuarioNuevo from './pages/AdminUsuarioNuevo';
 import BlogDetalle from './pages/BlogDetalle';
+import CatalogoConectado from './pages/CatalogoConectado';
+import { RUTA_CATALOGO_CONECTADO } from './context/catalogo';
 
 function App() {
 
@@ -65,6 +67,13 @@ function App() {
                     <Route path="/productos" element={<Productos />} />
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/productos/:id" element={<DetalleProducto />} />
+
+                    <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>
+                        <Route index element={<Productos />} />
+                        <Route path="categorias" element={<Categorias />} />
+                        <Route path="ofertas" element={<Ofertas />} />
+                        <Route path=":id" element={<DetalleProducto />} />
+                    </Route>
 
                     <Route path="/carrito" element={<Carrito />} />
                     <Route path="/checkout" element={<Checkout />} />

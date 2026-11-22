@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 import {
     obtenerProductos,
@@ -10,7 +11,10 @@ import {
 
 export default function Ofertas() {
 
-    const productos = obtenerProductos();
+    const catalogo = useCatalogoConectado();
+    const conectado = Boolean(catalogo);
+    const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
+    const productos = conectado ? catalogo.productos : obtenerProductos();
 
 
     const productosEnOferta = productos
@@ -22,7 +26,7 @@ export default function Ofertas() {
                 obtenerDescuentoProducto(producto),
 
             precioOferta:
-                obtenerPrecioFinalProducto(producto)
+                conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto)
         }));
 
 
@@ -112,7 +116,7 @@ export default function Ofertas() {
 
 
                                             <Link
-                                                to={`/productos/${producto.id}`}
+                                                to={`${rutaProductos}/${producto.id}`}
                                                 className="btn btn-danger w-100"
                                             >
                                                 Ver producto

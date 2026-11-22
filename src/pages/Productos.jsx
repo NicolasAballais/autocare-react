@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import {
     Link,
@@ -19,176 +19,74 @@ import {
 import {
     useCarrito
 } from '../context/CarritoContext';
+import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 
 export default function Productos() {
+    const catalogo = useCatalogoConectado();
+    const conectado = Boolean(catalogo);
+    const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
+    const productos = conectado ? catalogo.productos : obtenerProductos();
+    const categorias = conectado ? catalogo.categorias : obtenerCategorias();
+    const { agregarProducto } = useCarrito();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [orden, setOrden] = useState('');
 
-    const productos = obtenerProductos();
-    const categorias = obtenerCategorias();
+    const categoriasSeleccionadas = searchParams.getAll('categoria');
+    const busqueda = searchParams.get('buscar') ?? '';
+    const texto = busqueda.trim().toLowerCase();
 
-    const {
-        agregarProducto
-    } = useCarrito();
-
-    const [
-        searchParams,
-        setSearchParams
-    ] = useSearchParams();
-
-
-    const categoriasSeleccionadas =
-        searchParams.getAll('categoria');
-
-
-    const [busqueda, setBusqueda] =
-        useState('');
-
-    const [orden, setOrden] =
-        useState('');
-
-
-    const productosFiltrados =
-        useMemo(() => {
-
-            let resultado = [...productos];
-
-
-            if (
-                categoriasSeleccionadas.length > 0
-            ) {
-
-                resultado =
-                    resultado.filter(
-                        (producto) =>
-                            categoriasSeleccionadas.includes(
-                                producto.categoria
-                            )
-                    );
-            }
-
-
-            if (busqueda.trim()) {
-
-                const texto =
-                    busqueda
-                        .trim()
-                        .toLowerCase();
-
-
-                resultado =
-                    resultado.filter(
-                        (producto) =>
-
-                            producto.nombre
-                                .toLowerCase()
-                                .includes(texto)
-
-                            ||
-
-                            producto.categoria
-                                .toLowerCase()
-                                .includes(texto)
-
-                            ||
-
-                            producto.descripcion
-                                .toLowerCase()
-                                .includes(texto)
-                    );
-            }
-
-
-            if (orden === 'precio-menor') {
-
-                resultado.sort(
-                    (a, b) =>
-                        obtenerPrecioFinalProducto(a)
-                        -
-                        obtenerPrecioFinalProducto(b)
-                );
-            }
-
-
-            if (orden === 'precio-mayor') {
-
-                resultado.sort(
-                    (a, b) =>
-                        obtenerPrecioFinalProducto(b)
-                        -
-                        obtenerPrecioFinalProducto(a)
-                );
-            }
-
-
-            if (orden === 'nombre') {
-
-                resultado.sort(
-                    (a, b) =>
-                        a.nombre.localeCompare(
-                            b.nombre
-                        )
-                );
-            }
-
-
-            return resultado;
-
-        }, [
-            productos,
-            categoriasSeleccionadas,
-            busqueda,
-            orden
-        ]);
-
-
-    function alternarCategoria(
-        nombreCategoria
-    ) {
-
-        const nuevasCategorias =
-            categoriasSeleccionadas.includes(
-                nombreCategoria
-            )
-                ? categoriasSeleccionadas.filter(
-                    (categoria) =>
-                        categoria !==
-                        nombreCategoria
-                )
-                : [
-                    ...categoriasSeleccionadas,
-                    nombreCategoria
-                ];
-
-
-        const nuevosParametros =
-            new URLSearchParams();
-
-
-        nuevasCategorias.forEach(
-            (categoria) => {
-
-                nuevosParametros.append(
-                    'categoria',
-                    categoria
-                );
-
-            }
-        );
-
-
-        setSearchParams(
-            nuevosParametros
-        );
+    function precioParaMostrar(producto) {
+        return conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto);
     }
 
+    const productosFiltrados = productos.filter((producto) => {
+        const categoria = conectado ? producto.categoriaId : producto.categoria;
+        const coincideCategoria = categoriasSeleccionadas.length === 0 ||
+            categoriasSeleccionadas.includes(categoria);
+        const coincideBusqueda = !texto || [producto.nombre, producto.categoria, producto.descripcion]
+            .some((campo) => (campo ?? '').toLowerCase().includes(texto));
+
+        return coincideCategoria && coincideBusqueda;
+    });
+
+    if (orden === 'precio-menor') {
+        productosFiltrados.sort((a, b) => precioParaMostrar(a) - precioParaMostrar(b));
+    }
+    if (orden === 'precio-mayor') {
+        productosFiltrados.sort((a, b) => precioParaMostrar(b) - precioParaMostrar(a));
+    }
+    if (orden === 'nombre') {
+        productosFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }
+
+    function alternarCategoria(categoria) {
+        const parametros = new URLSearchParams(searchParams);
+
+        if (categoriasSeleccionadas.includes(categoria)) {
+            parametros.delete('categoria', categoria);
+        } else {
+            parametros.append('categoria', categoria);
+        }
+
+        setSearchParams(parametros);
+    }
+
+    function cambiarBusqueda(textoNuevo) {
+        const parametros = new URLSearchParams(searchParams);
+        if (textoNuevo) {
+            parametros.set('buscar', textoNuevo);
+        } else {
+            parametros.delete('buscar');
+        }
+
+        setSearchParams(parametros, { replace: true });
+    }
 
     function limpiarFiltros() {
-
         setSearchParams({});
-        setBusqueda('');
         setOrden('');
     }
-
 
     return (
         <main className="container my-5">
@@ -202,6 +100,12 @@ export default function Productos() {
                 <p className="text-muted">
                     {productosFiltrados.length} productos disponibles
                 </p>
+
+                {!conectado && (
+                    <Link className="btn btn-outline-secondary btn-sm" to={RUTA_CATALOGO_CONECTADO}>
+                        Ver catálogo conectado
+                    </Link>
+                )}
 
             </div>
 
@@ -232,10 +136,8 @@ export default function Productos() {
                                 {categorias.map(
                                     (categoria) => {
 
-                                        const activa =
-                                            categoriasSeleccionadas.includes(
-                                                categoria.nombre
-                                            );
+                                        const valor = conectado ? categoria.id : categoria.nombre;
+                                        const activa = categoriasSeleccionadas.includes(valor);
 
                                         return (
 
@@ -247,11 +149,8 @@ export default function Productos() {
                                                         ? 'btn btn-danger btn-sm'
                                                         : 'btn btn-outline-secondary btn-sm'
                                                 }
-                                                onClick={() =>
-                                                    alternarCategoria(
-                                                        categoria.nombre
-                                                    )
-                                                }
+                                                aria-pressed={activa}
+                                                onClick={() => alternarCategoria(valor)}
                                             >
                                                 {categoria.nombre}
                                             </button>
@@ -298,11 +197,7 @@ export default function Productos() {
                                     className="form-control"
                                     placeholder="Buscar productos por nombre, categoría o descripción..."
                                     value={busqueda}
-                                    onChange={(evento) =>
-                                        setBusqueda(
-                                            evento.target.value
-                                        )
-                                    }
+                                    onChange={(evento) => cambiarBusqueda(evento.target.value)}
                                 />
 
                             </div>
@@ -314,6 +209,7 @@ export default function Productos() {
 
                             <select
                                 className="form-select"
+                                aria-label="Ordenar productos"
                                 value={orden}
                                 onChange={(evento) =>
                                     setOrden(
@@ -348,7 +244,9 @@ export default function Productos() {
                     {productosFiltrados.length === 0 ? (
 
                         <div className="alert alert-info">
-                            No se encontraron productos con los filtros seleccionados.
+                            {conectado && productos.length === 0
+                                ? 'El catálogo conectado está vacío.'
+                                : 'No se encontraron productos con los filtros seleccionados.'}
                         </div>
 
                     ) : (
@@ -363,10 +261,7 @@ export default function Productos() {
                                             producto
                                         );
 
-                                    const precioFinal =
-                                        obtenerPrecioFinalProducto(
-                                            producto
-                                        );
+                                    const precioFinal = precioParaMostrar(producto);
 
                                     const enOferta =
                                         productoEstaEnOferta(
@@ -441,7 +336,7 @@ export default function Productos() {
                                                         ) : (
 
                                                             <h5 className="text-danger">
-                                                                ${producto.precio.toLocaleString('es-CL')}
+                                                                ${(conectado ? precioFinal : producto.precio).toLocaleString('es-CL')}
                                                             </h5>
 
                                                         )}
@@ -468,7 +363,7 @@ export default function Productos() {
                                                         <div className="d-flex gap-2">
 
                                                             <Link
-                                                                to={`/productos/${producto.id}`}
+                                                                to={`${rutaProductos}/${producto.id}`}
                                                                 className="btn btn-outline-secondary flex-grow-1"
                                                             >
                                                                 Ver detalle
@@ -479,9 +374,9 @@ export default function Productos() {
                                                                 type="button"
                                                                 className="btn btn-danger"
                                                                 disabled={
-                                                                    producto.stock <= 0
+                                                                    conectado || producto.stock <= 0
                                                                 }
-                                                                onClick={() =>
+                                                                onClick={conectado ? undefined : () =>
                                                                     agregarProducto({
                                                                         ...producto,
 
@@ -495,7 +390,9 @@ export default function Productos() {
                                                                     })
                                                                 }
                                                             >
-                                                                <i className="bi bi-cart-plus"></i>
+                                                                {conectado
+                                                                    ? 'Solo lectura'
+                                                                    : <i className="bi bi-cart-plus"></i>}
                                                             </button>
 
                                                         </div>

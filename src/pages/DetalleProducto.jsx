@@ -10,22 +10,24 @@ import {
 import {
     useCarrito
 } from '../context/CarritoContext';
+import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 
 export default function DetalleProducto() {
 
     const { id } = useParams();
+    const catalogo = useCatalogoConectado();
+    const conectado = Boolean(catalogo);
+    const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
 
     const {
         agregarProducto
     } = useCarrito();
 
 
-    const producto =
-        obtenerProductos().find(
-            (producto) =>
-                producto.id === Number(id)
-        );
+    const productos = conectado ? catalogo.productos : obtenerProductos();
+    const idProducto = conectado ? id : Number(id);
+    const producto = productos.find((producto) => producto.id === idProducto);
 
 
     if (!producto) {
@@ -38,7 +40,7 @@ export default function DetalleProducto() {
                 </h1>
 
                 <Link
-                    to="/productos"
+                    to={rutaProductos}
                     className="btn btn-danger mt-3"
                 >
                     Volver al catálogo
@@ -54,10 +56,7 @@ export default function DetalleProducto() {
             producto
         );
 
-    const precioFinal =
-        obtenerPrecioFinalProducto(
-            producto
-        );
+    const precioFinal = conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto);
 
     const enOferta =
         productoEstaEnOferta(
@@ -176,7 +175,7 @@ export default function DetalleProducto() {
 
                         <h3 className="text-danger">
                             {formatoPrecio.format(
-                                producto.precio
+                                conectado ? precioFinal : producto.precio
                             )}
                         </h3>
 
@@ -217,21 +216,17 @@ export default function DetalleProducto() {
                         <button
                             type="button"
                             className="btn btn-danger"
-                            disabled={
-                                producto.stock <= 0
-                            }
-                            onClick={
-                                agregarConPrecioFinal
-                            }
+                            disabled={conectado || producto.stock <= 0}
+                            onClick={conectado ? undefined : agregarConPrecioFinal}
                         >
                             <i className="bi bi-cart-plus me-2"></i>
 
-                            Agregar al carrito
+                            {conectado ? 'Solo lectura' : 'Agregar al carrito'}
                         </button>
 
 
                         <Link
-                            to="/productos"
+                            to={rutaProductos}
                             className="btn btn-outline-secondary"
                         >
                             Volver

@@ -1,10 +1,11 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
 import { obtenerSesion, cerrarSesion } from '../services/usuariosService';
 import { useCarrito } from '../context/CarritoContext';
+import { RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
 
 export default function Navbar() {
 
-    useLocation();
+    const conectado = Boolean(useMatch(`${RUTA_CATALOGO_CONECTADO}/*`));
 
     const sesion = obtenerSesion();
     const { cantidadTotal } = useCarrito();
@@ -52,13 +53,13 @@ export default function Navbar() {
                         </li>
 
                         <li className="nav-item">
-                            <Link className="nav-link" to="/productos">
+                            <Link className="nav-link" to={conectado ? RUTA_CATALOGO_CONECTADO : '/productos'}>
                                 Productos
                             </Link>
                         </li>
 
                         <li className="nav-item">
-                            <Link className="nav-link" to="/categorias">
+                            <Link className="nav-link" to={conectado ? `${RUTA_CATALOGO_CONECTADO}/categorias` : '/categorias'}>
                                 Categorías
                             </Link>
                         </li>
@@ -66,7 +67,7 @@ export default function Navbar() {
                         <li className="nav-item">
                             <Link
                                 className="nav-link"
-                                to="/ofertas"
+                                to={conectado ? `${RUTA_CATALOGO_CONECTADO}/ofertas` : '/ofertas'}
                             >
                                 Ofertas
                             </Link>
@@ -161,17 +162,18 @@ export default function Navbar() {
 
                     )}
 
-                    <Link
-                        to="/carrito"
-                        className="nav-link text-white position-relative ms-3"
-                    >
-                        <i className="bi bi-cart3 fs-4"></i>
+                    {!conectado && (
+                        <Link
+                            to="/carrito"
+                            className="nav-link text-white position-relative ms-3"
+                        >
+                            <i className="bi bi-cart3 fs-4"></i>
 
-                        <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
-                            {cantidadTotal}
-                        </span>
-
-                    </Link>
+                            <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
+                                {cantidadTotal}
+                            </span>
+                        </Link>
+                    )}
 
                 </div>
 

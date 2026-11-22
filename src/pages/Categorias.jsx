@@ -1,31 +1,35 @@
-import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { obtenerCategorias } from '../services/categoriasService';
 import { obtenerProductos } from '../services/productosService';
+import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 export default function Categorias() {
 
-    const categorias = obtenerCategorias();
-    const productos = obtenerProductos();
+    const catalogo = useCatalogoConectado();
+    const conectado = Boolean(catalogo);
+    const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
+    const categorias = conectado ? catalogo.categorias : obtenerCategorias();
+    const productos = conectado ? catalogo.productos : obtenerProductos();
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [searchParams] = useSearchParams();
+    function valorCategoria(categoria) {
+        return conectado ? categoria.id : categoria.nombre;
+    }
 
-    const categoriaURL =
-        searchParams.get('categoria');
+    let seleccion = searchParams.get('categoria');
+    if (!seleccion) {
+        const primeraConProductos = conectado
+            ? categorias.find((categoria) => productos.some((producto) => producto.categoriaId === categoria.id))
+            : undefined;
+        const categoriaInicial = primeraConProductos ?? categorias[0];
+        seleccion = categoriaInicial ? valorCategoria(categoriaInicial) : '';
+    }
 
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(
-        categoriaURL ||
-        (
-            categorias.length > 0
-                ? categorias[0].nombre
-                : ''
-        )
-    );
-
+    const categoriaSeleccionada = categorias.find((categoria) => valorCategoria(categoria) === seleccion);
+    const nombreCategoria = conectado ? categoriaSeleccionada?.nombre ?? 'Productos por categoría' : seleccion;
     const productosCategoria = productos.filter(
-        (producto) =>
-            producto.categoria === categoriaSeleccionada
+        (producto) => (conectado ? producto.categoriaId : producto.categoria) === seleccion
     );
 
     const formatoPrecio = new Intl.NumberFormat(
@@ -65,7 +69,7 @@ export default function Categorias() {
 
                         <div
                             className={
-                                categoriaSeleccionada === categoria.nombre
+                                categoriaSeleccionada === categoria
                                     ? 'card shadow-sm h-100 border-danger'
                                     : 'card shadow-sm h-100'
                             }
@@ -82,15 +86,12 @@ export default function Categorias() {
                                 <button
                                     type="button"
                                     className={
-                                        categoriaSeleccionada === categoria.nombre
+                                        categoriaSeleccionada === categoria
                                             ? 'btn btn-danger mt-3'
                                             : 'btn btn-outline-danger mt-3'
                                     }
-                                    onClick={() =>
-                                        setCategoriaSeleccionada(
-                                            categoria.nombre
-                                        )
-                                    }
+                                    aria-pressed={categoriaSeleccionada === categoria}
+                                    onClick={() => setSearchParams({ categoria: valorCategoria(categoria) })}
                                 >
                                     Ver productos
                                 </button>
@@ -110,7 +111,7 @@ export default function Categorias() {
             <div className="mb-4">
 
                 <h2>
-                    {categoriaSeleccionada}
+                    {nombreCategoria}
                 </h2>
 
                 <p className="text-muted">
@@ -158,9 +159,14 @@ export default function Categorias() {
                                         {producto.descripcion}
                                     </p>
 
+                                    {conectado && producto.descuento > 0 && (
+                                        <div className="text-muted text-decoration-line-through">
+                                            {formatoPrecio.format(producto.precio)}
+                                        </div>
+                                    )}
                                     <p className="fw-bold text-danger fs-5">
                                         {formatoPrecio.format(
-                                            producto.precio
+                                            conectado ? producto.precioFinal : producto.precio
                                         )}
                                     </p>
 
@@ -169,7 +175,7 @@ export default function Categorias() {
                                     </p>
 
                                     <Link
-                                        to={`/productos/${producto.id}`}
+                                        to={`${rutaProductos}/${producto.id}`}
                                         className="btn btn-outline-danger mt-auto"
                                     >
                                         Ver detalle
