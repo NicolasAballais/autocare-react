@@ -9,21 +9,22 @@ export class ErrorApi extends Error {
     }
 }
 
-export async function obtenerJsonApi(ruta, { urlBase = URL_BASE_API } = {}) {
-    return solicitarJsonApi(ruta, { urlBase, method: 'GET' });
+export async function obtenerJsonApi(ruta, { urlBase = URL_BASE_API, estadoEsperado, cache } = {}) {
+    return solicitarJsonApi(ruta, { urlBase, method: 'GET', estadoEsperado, cache });
 }
 
-export async function enviarJsonApi(ruta, datos, { urlBase = URL_BASE_API, estadoEsperado } = {}) {
-    return solicitarJsonApi(ruta, { urlBase, method: 'POST', datos, estadoEsperado });
+export async function enviarJsonApi(ruta, cuerpo, { urlBase = URL_BASE_API, estadoEsperado, cabeceras } = {}) {
+    return solicitarJsonApi(ruta, { urlBase, method: 'POST', cuerpo, estadoEsperado, cabeceras });
 }
 
-async function solicitarJsonApi(ruta, { urlBase, method, datos, estadoEsperado }) {
+async function solicitarJsonApi(ruta, { urlBase, method, cuerpo, estadoEsperado, cabeceras, cache }) {
     const url = urlBase.replace(/\/+$/, '') + ruta;
-    const headers = { Accept: 'application/json, application/problem+json' };
+    const headers = { Accept: 'application/json, application/problem+json', ...cabeceras };
     const opciones = { method, headers };
+    if (cache) opciones.cache = cache;
     if (method === 'POST') {
         headers['Content-Type'] = 'application/json';
-        opciones.body = JSON.stringify(datos);
+        opciones.body = cuerpo;
     }
     let respuesta;
 

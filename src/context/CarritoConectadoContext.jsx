@@ -1,10 +1,13 @@
-import { createContext, useContext, useRef, useState } from 'react';
-import { esObjectId, lineaCarritoConectado, mismoIdProducto } from '../services/carritoService.js';
-import { idOrdenSinConfirmar, validarOrdenConfirmada } from '../services/ordenesApi.js';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { esObjectId, lineaCarritoConectado, mismoIdProducto, normalizarIdProducto } from '../services/carritoService.js';
+import { EnvioOrdenBloqueado, generarClaveOrden, mismosProductos, prepararSolicitudOrden,
+    solicitudDelIntento, validarOrdenConfirmada } from '../services/ordenesApi.js';
 
 const CarritoConectadoContext = createContext();
 const CLAVE = 'carritoConectadoAutoCare';
 const ESTADO_INICIAL = { carrito: [], intento: null, ordenConfirmada: null };
+const MOTIVOS_RECHAZO = { 400: 'Datos inválidos.', 404: 'Uno de los productos ya no está disponible.',
+    409: 'Stock insuficiente o conflicto de idempotencia o inventario.' };
 
 function leerCarritoConectado() {
     try {
@@ -18,22 +21,29 @@ function leerCarritoConectado() {
 
 export function CarritoConectadoProvider({ children }) {
     const [estado, setEstado] = useState(leerCarritoConectado);
-    const actual = useRef(estado);
     const [procesando, setProcesando] = useState(false);
-    const [mensaje, setMensaje] = useState('');
-    const consultaEnCurso = useRef(false);
+    const [mensaje, setMensaje] = useState(null);
+    const operacionEnCurso = useRef(false);
+
+    useEffect(() => {
+        function sincronizar(evento) {
+            if (evento.key === CLAVE) setEstado(leerCarritoConectado());
+        }
+        window.addEventListener('storage', sincronizar);
+        return () => window.removeEventListener('storage', sincronizar);
+    }, []);
 
     function guardarEstado(nuevoEstado) {
         localStorage.setItem(CLAVE, JSON.stringify(nuevoEstado));
-        actual.current = nuevoEstado;
         setEstado(nuevoEstado);
     }
 
     function actualizarCarrito(actualizar) {
-        if (actual.current.intento) return;
-        const carrito = actualizar(actual.current.carrito);
-        guardarEstado({ ...actual.current, carrito, ordenConfirmada: null });
-        setMensaje('');
+        const actual = leerCarritoConectado();
+        if (actual.intento || operacionEnCurso.current) return;
+        const carrito = actualizar(actual.carrito);
+        guardarEstado({ ...actual, carrito, ordenConfirmada: null });
+        setMensaje(null);
     }
 
     function agregarProducto(producto) {
@@ -68,62 +78,113 @@ export function CarritoConectadoProvider({ children }) {
         });
     }
 
-    function guardarConfirmacion(orden) {
-        guardarEstado({ carrito: [], intento: null, ordenConfirmada: orden });
-        setMensaje('');
+    function estadoDelIntento(intento) {
+        const actual = leerCarritoConectado();
+        if (actual.intento?.id === intento.id && actual.intento.cuerpo === intento.cuerpo) return actual;
+        setEstado(actual);
+        return null;
     }
 
-    async function consultarPendiente(consultar, id = actual.current.intento?.id) {
-        if (!id || consultaEnCurso.current) return;
-        consultaEnCurso.current = true;
-        setProcesando(true);
-        try {
-            guardarConfirmacion(validarOrdenConfirmada(await consultar(id), id));
-        } catch {
-            setMensaje('La orden sigue sin confirmación. Puedes volver a consultarla.');
-        } finally {
-            consultaEnCurso.current = false;
-            setProcesando(false);
-        }
+    function guardarConfirmacion(respuesta, intento) {
+        const orden = validarOrdenConfirmada(respuesta, intento);
+        const actual = estadoDelIntento(intento);
+        if (!actual) return;
+
+        const confirmados = new Map(orden.productos.map(({ productoId, cantidad }) => [normalizarIdProducto(productoId), cantidad]));
+        const carrito = actual.carrito.map((linea) => ({ ...linea,
+            cantidad: linea.cantidad - (confirmados.get(normalizarIdProducto(linea.id)) ?? 0)
+        })).filter((linea) => linea.cantidad > 0);
+        guardarEstado({ carrito, intento: null, intentoRechazado: null, ordenConfirmada: orden });
+        setMensaje(null);
     }
 
-    async function registrarCompra(solicitud, enviar, consultar) {
-        if (actual.current.intento || actual.current.ordenConfirmada) return;
+    async function consultarResultado(intento, consultar) {
         try {
-            // Persistir antes del POST impide repetir el envío al recargar o volver a esta pantalla.
-            guardarEstado({ ...actual.current, intento: {} });
-        } catch {
-            setMensaje('No se pudo guardar el intento de compra. El envío quedó bloqueado.');
-            return;
-        }
-        setProcesando(true);
-        setMensaje('');
-        try {
-            guardarConfirmacion(validarOrdenConfirmada(await enviar(solicitud)));
+            guardarConfirmacion(await consultar(intento.id), intento);
         } catch (error) {
-            if ([400, 404, 409].includes(error.estado)) {
-                guardarEstado({ ...actual.current, intento: null });
-                const motivo = { 400: 'Datos inválidos.', 404: 'Uno de los productos ya no está disponible.',
-                    409: 'Stock insuficiente o conflicto de inventario.' };
-                setMensaje(`${motivo[error.estado]} ${error.message}`);
-            } else {
-                const id = idOrdenSinConfirmar(error);
-                if (id) {
-                    guardarEstado({ ...actual.current, intento: { id } });
-                    await consultarPendiente(consultar, id);
-                } else {
-                    setMensaje('La compra quedó sin confirmación. Conservamos el carrito para verificar el resultado.');
-                }
+            if (estadoDelIntento(intento)) {
+                const detalle = error.estado === 404 ? '' : ` ${error.message}`;
+                setMensaje({ texto: `La orden sigue sin confirmación. Puedes volver a consultarla.${detalle}` });
             }
+        }
+    }
+
+    async function ejecutarOperacion(operacion) {
+        if (operacionEnCurso.current) return;
+        operacionEnCurso.current = true;
+        setProcesando(true);
+        setMensaje(null);
+        try {
+            // El bloqueo del navegador coordina pestañas de este origen cuando está disponible.
+            if (navigator.locks) await navigator.locks.request(CLAVE, operacion);
+            else await operacion();
+        } catch {
+            setMensaje({ texto: 'No se pudo guardar o actualizar el intento de compra. Comprueba su estado antes de reenviar.' });
         } finally {
+            operacionEnCurso.current = false;
             setProcesando(false);
         }
+    }
+
+    async function enviarIntento(intento, enviar, consultar, reintento = false) {
+        try {
+            guardarConfirmacion(await enviar(intento), intento);
+        } catch (error) {
+            const actual = estadoDelIntento(intento);
+            if (!actual) return;
+            const envioBloqueado = error instanceof EnvioOrdenBloqueado;
+            const stockInsuficiente = error.estado === 409 && /^Stock insuficiente/i.test(error.message);
+            const rechazoDefinitivo = envioBloqueado || [400, 404].includes(error.estado) || stockInsuficiente;
+            if (rechazoDefinitivo && !reintento) {
+                guardarEstado({ ...actual, intento: null, intentoRechazado: intento });
+            }
+            const motivo = MOTIVOS_RECHAZO[error.estado];
+            if (motivo || envioBloqueado) {
+                setMensaje({ texto: [motivo, error.message].filter(Boolean).join(' '), campos: error.campos });
+            } else {
+                await consultarResultado(intento, consultar);
+            }
+        }
+    }
+
+    function registrarCompra(solicitud, enviar, consultar) {
+        return ejecutarOperacion(async () => {
+            const actual = leerCarritoConectado();
+            if (actual.intento || actual.ordenConfirmada) {
+                setEstado(actual);
+                return;
+            }
+            if (!actual.carrito.length || !mismosProductos(solicitud.productos, prepararSolicitudOrden(actual.carrito).productos)) {
+                setEstado(actual);
+                setMensaje({ texto: 'El carrito cambió. Revisa los productos antes de confirmar.' });
+                return;
+            }
+            const cuerpo = JSON.stringify(solicitud);
+            const previo = actual.intentoRechazado;
+            const intento = previo?.cuerpo === cuerpo && solicitudDelIntento(previo) ? previo : { id: generarClaveOrden(), cuerpo };
+            guardarEstado({ ...actual, intento, intentoRechazado: null });
+            await enviarIntento(intento, enviar, consultar);
+        });
+    }
+
+    function consultarPendiente(consultar) {
+        return ejecutarOperacion(async () => {
+            const { intento } = leerCarritoConectado();
+            if (solicitudDelIntento(intento)) await consultarResultado(intento, consultar);
+        });
+    }
+
+    function reintentarCompra(enviar, consultar) {
+        return ejecutarOperacion(async () => {
+            const { intento } = leerCarritoConectado();
+            if (solicitudDelIntento(intento)) await enviarIntento(intento, enviar, consultar, true);
+        });
     }
 
     const cantidadTotal = estado.carrito.reduce((suma, linea) => suma + linea.cantidad, 0);
     return (
         <CarritoConectadoContext.Provider value={{ ...estado, cantidadTotal, agregarProducto, cambiarCantidad,
-            eliminarProducto, aplicarPropuesta, registrarCompra, consultarPendiente, procesando, mensaje }}>
+            eliminarProducto, aplicarPropuesta, registrarCompra, consultarPendiente, reintentarCompra, procesando, mensaje }}>
             {children}
         </CarritoConectadoContext.Provider>
     );

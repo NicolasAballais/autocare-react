@@ -15,7 +15,7 @@ export default function RevisionCarritoConectado() {
         let vigente = true;
         async function consultarCatalogo() {
             try {
-                const productos = await obtenerProductosApi();
+                const productos = await obtenerProductosApi({ cache: 'no-store' });
                 if (!Array.isArray(productos)) throw new Error('La API no devolvió un listado de productos.');
                 if (vigente) setRevision({ pathname, intentos, productos });
             } catch (error) {

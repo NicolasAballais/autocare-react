@@ -1,6 +1,14 @@
 import { enviarJsonApi, obtenerJsonApi } from './api.js';
+import { obtenerProductosApi } from './catalogoApi.js';
 import { esObjectId, mismoIdProducto, normalizarIdProducto } from './carritoService.js';
-import { ENVIO_ORDENES_HABILITADO } from './ordenesConfiguracion.js';
+import { modoPruebaOrdenesActivo, PREFIJO_PRODUCTO_TEMPORAL } from './ordenesConfiguracion.js';
+
+export class EnvioOrdenBloqueado extends Error {}
+
+export function generarClaveOrden() {
+    const bytes = crypto.getRandomValues(new Uint8Array(12));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
 
 export function prepararSolicitudOrden(carrito) {
     const productos = carrito.map(({ id, cantidad }) => ({ productoId: normalizarIdProducto(id), cantidad }));
@@ -12,28 +20,66 @@ export function prepararSolicitudOrden(carrito) {
     return { productos };
 }
 
-export function enviarOrdenApi(solicitud) {
-    if (!ENVIO_ORDENES_HABILITADO) {
-        throw new Error('El envío de órdenes está deshabilitado en esta etapa.');
+export function solicitudDelIntento(intento) {
+    if (!esObjectId(intento?.id) || typeof intento.cuerpo !== 'string') return null;
+    try {
+        const datos = JSON.parse(intento.cuerpo);
+        if (Object.keys(datos).length !== 1 || !Array.isArray(datos.productos) || datos.productos.some((linea) =>
+            !linea || Object.keys(linea).length !== 2 || !esObjectId(linea.productoId))) return null;
+        prepararSolicitudOrden(datos.productos.map(({ productoId, cantidad }) => ({ id: productoId, cantidad })));
+        return datos;
+    } catch {
+        return null;
     }
-    return enviarJsonApi('/ordenes', solicitud, { estadoEsperado: 201 });
+}
+
+export function sonProductosTemporales(solicitud, catalogo) {
+    return Boolean(solicitud?.productos.length && Array.isArray(catalogo) && solicitud.productos.every(({ productoId }) =>
+        catalogo.some((producto) => mismoIdProducto(producto?.id, productoId) &&
+            typeof producto.codigo === 'string' && producto.codigo.startsWith(PREFIJO_PRODUCTO_TEMPORAL))));
+}
+
+export function crearEnvioOrden({ habilitado = modoPruebaOrdenesActivo() } = {}) {
+    return async function enviar(intento) {
+        if (!habilitado) throw new EnvioOrdenBloqueado('El envío de órdenes está deshabilitado en esta etapa.');
+        const solicitud = solicitudDelIntento(intento);
+        if (!solicitud) throw new EnvioOrdenBloqueado('El intento de compra guardado no es válido.');
+
+        let catalogo;
+        try {
+            catalogo = await obtenerProductosApi({ cache: 'no-store' });
+        } catch {
+            throw new EnvioOrdenBloqueado('No se pudo verificar el catálogo antes de enviar la compra.');
+        }
+        if (!sonProductosTemporales(solicitud, catalogo)) {
+            throw new EnvioOrdenBloqueado('La prueba admite únicamente productos temporales con código TEST-.');
+        }
+        return enviarJsonApi('/ordenes', intento.cuerpo, {
+            estadoEsperado: 201, cabeceras: { 'Idempotency-Key': intento.id }
+        });
+    };
+}
+
+export function enviarOrdenApi(intento) {
+    return crearEnvioOrden()(intento);
 }
 
 export function obtenerOrdenApi(id) {
     if (!esObjectId(id)) throw new Error('El identificador de la orden no es válido.');
-    return obtenerJsonApi(`/ordenes/${id}`);
+    return obtenerJsonApi(`/ordenes/${id}`, { estadoEsperado: 200, cache: 'no-store' });
 }
 
-export function idOrdenSinConfirmar(error) {
-    // El contrato actual incluye el ID de la compra dentro de ProblemDetail.detail.
-    return error.estado === 503
-        ? error.message.match(/resultado de la orden ([a-f0-9]{24})\b/i)?.[1]?.toLowerCase()
-        : undefined;
+export function mismosProductos(primera, segunda) {
+    return primera.length === segunda.length && primera.every(({ productoId, cantidad }) =>
+        segunda.some((linea) => mismoIdProducto(linea?.productoId, productoId) && linea.cantidad === cantidad));
 }
 
-export function validarOrdenConfirmada(orden, idEsperado) {
-    if (!esObjectId(orden?.id) || !Number.isFinite(orden.total) || orden.total < 0 ||
-        (idEsperado && !mismoIdProducto(orden.id, idEsperado))) {
+export function validarOrdenConfirmada(orden, intento) {
+    const solicitud = solicitudDelIntento(intento);
+    if (!solicitud || !esObjectId(orden?.id) || !mismoIdProducto(orden.id, intento.id) ||
+        !Number.isFinite(orden.total) || orden.total < 0 || !Array.isArray(orden.productos) ||
+        !mismosProductos(solicitud.productos, orden.productos) ||
+        orden.productos.some((linea) => typeof linea.nombre !== 'string' || !linea.nombre.trim())) {
         throw new Error('La API no entregó una confirmación válida de la orden.');
     }
     return orden;
