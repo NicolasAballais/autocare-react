@@ -2,12 +2,16 @@ import { obtenerProductosApi } from './catalogoApi.js';
 
 const FORMATO_OBJECT_ID = /^[0-9a-f]{24}$/i;
 
-function normalizarIdProducto(id) {
+export function normalizarIdProducto(id) {
     if (Number.isSafeInteger(id)) return String(id);
     if (typeof id !== 'string') return '';
 
     const texto = id.trim();
     return FORMATO_OBJECT_ID.test(texto) ? texto.toLowerCase() : texto;
+}
+
+export function esObjectId(id) {
+    return typeof id === 'string' && FORMATO_OBJECT_ID.test(id);
 }
 
 export function mismoIdProducto(idA, idB) {
@@ -100,4 +104,18 @@ export async function prepararCarritoConectado(carrito, opciones) {
     }
 
     return proponerCarritoConectado(carrito, productos);
+}
+
+export function lineaCarritoConectado(producto, cantidad) {
+    return { ...producto, id: normalizarIdProducto(producto.id),
+        precioOriginal: producto.precio, precio: producto.precioFinal, cantidad };
+}
+
+export function revisarCarritoConectado(carrito, productos) {
+    return carrito.map((linea) => {
+        const producto = productos.find((item) => mismoIdProducto(item.id, linea.id));
+        return producto
+            ? { ...lineaCarritoConectado(producto, linea.cantidad), precioAnterior: linea.precio }
+            : { ...linea, stock: 0, noDisponible: true };
+    });
 }

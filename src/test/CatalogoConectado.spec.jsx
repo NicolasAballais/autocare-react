@@ -61,7 +61,7 @@ function renderizar(ruta = RUTA_CATALOGO_CONECTADO) {
     );
 }
 
-describe('Catálogo conectado de solo lectura', () => {
+describe('Catálogo conectado', () => {
     let fetchSimulado;
 
     beforeEach(() => {
@@ -132,12 +132,8 @@ describe('Catálogo conectado de solo lectura', () => {
         renderizar();
         await screen.findByText('4 productos disponibles');
 
-        const botones = screen.getAllByRole('button', { name: 'Solo lectura' });
-        expect(botones.length).toBe(4);
-        expect(botones.every((boton) => boton.disabled)).toBeTrue();
-        fireEvent.click(botones[0]);
-
         const [producto] = productosApi;
+        fireEvent.click(screen.getByRole('button', { name: `Agregar ${producto.nombre} al carrito conectado` }));
         const enlace = screen.getAllByRole('link', { name: 'Ver detalle' })[0];
         expect(enlace.getAttribute('href')).toBe(`${RUTA_CATALOGO_CONECTADO}/${producto.id}`);
         fireEvent.click(enlace);
@@ -145,10 +141,11 @@ describe('Catálogo conectado de solo lectura', () => {
         expect(screen.getByRole('heading', { name: producto.nombre })).toBeTruthy();
         expect(screen.getByRole('img', { name: producto.nombre }).getAttribute('src')).toBe(producto.imagen);
         expect(screen.getByText(/Stock disponible:/).parentElement.textContent).toContain(String(producto.stock));
-        const botonDetalle = screen.getByRole('button', { name: 'Solo lectura' });
-        expect(botonDetalle.disabled).toBeTrue();
-        fireEvent.click(botonDetalle);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito conectado' }));
         expect(JSON.parse(localStorage.getItem('carritoAutoCare'))).toEqual(carritoLocal);
+        expect(JSON.parse(localStorage.getItem('carritoConectadoAutoCare')).carrito).toEqual([
+            jasmine.objectContaining({ id: producto.id, cantidad: 2, precio: producto.precioFinal })
+        ]);
         expect(screen.getByRole('link', { name: 'Volver' }).getAttribute('href')).toBe(RUTA_CATALOGO_CONECTADO);
         expect(fetchSimulado.calls.count()).toBe(2);
     });

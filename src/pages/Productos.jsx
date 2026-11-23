@@ -20,6 +20,8 @@ import {
     useCarrito
 } from '../context/CarritoContext';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
+import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
+import { mismoIdProducto } from '../services/carritoService.js';
 
 
 export default function Productos() {
@@ -29,6 +31,7 @@ export default function Productos() {
     const productos = conectado ? catalogo.productos : obtenerProductos();
     const categorias = conectado ? catalogo.categorias : obtenerCategorias();
     const { agregarProducto } = useCarrito();
+    const remoto = useCarritoConectado();
     const [searchParams, setSearchParams] = useSearchParams();
     const [orden, setOrden] = useState('');
 
@@ -262,6 +265,9 @@ export default function Productos() {
                                         );
 
                                     const precioFinal = precioParaMostrar(producto);
+                                    const cantidadEnCarrito = conectado
+                                        ? remoto.carrito.find((linea) => mismoIdProducto(linea.id, producto.id))?.cantidad ?? 0
+                                        : 0;
 
                                     const enOferta =
                                         productoEstaEnOferta(
@@ -374,25 +380,16 @@ export default function Productos() {
                                                                 type="button"
                                                                 className="btn btn-danger"
                                                                 disabled={
-                                                                    conectado || producto.stock <= 0
+                                                                    producto.stock <= 0 ||
+                                                                    (conectado && (remoto.intento || cantidadEnCarrito >= producto.stock))
                                                                 }
-                                                                onClick={conectado ? undefined : () =>
-                                                                    agregarProducto({
-                                                                        ...producto,
-
-                                                                        precioOriginal:
-                                                                            producto.precio,
-
-                                                                        precio:
-                                                                            precioFinal,
-
-                                                                        descuento
-                                                                    })
-                                                                }
+                                                                aria-label={conectado ? `Agregar ${producto.nombre} al carrito conectado` : undefined}
+                                                                onClick={() => conectado
+                                                                    ? remoto.agregarProducto(producto)
+                                                                    : agregarProducto({ ...producto, precioOriginal: producto.precio,
+                                                                        precio: precioFinal, descuento })}
                                                             >
-                                                                {conectado
-                                                                    ? 'Solo lectura'
-                                                                    : <i className="bi bi-cart-plus"></i>}
+                                                                <i className="bi bi-cart-plus"></i>
                                                             </button>
 
                                                         </div>

@@ -41,8 +41,8 @@ export default function CatalogoConectado() {
             <div className="container mt-4">
                 <div className="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
                     <div>
-                        <strong>Catálogo conectado · solo lectura</strong>
-                        <div>El carrito y la compra están disponibles en el catálogo local.</div>
+                        <strong>Catálogo conectado</strong>
+                        <div>Agrega productos y revisa tu compra conectada.</div>
                     </div>
                     <Link className="btn btn-outline-secondary btn-sm" to="/productos">
                         Volver al catálogo local

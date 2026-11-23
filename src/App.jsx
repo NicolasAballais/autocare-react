@@ -46,7 +46,10 @@ import AdminReportes from './pages/AdminReportes';
 import AdminUsuarioNuevo from './pages/AdminUsuarioNuevo';
 import BlogDetalle from './pages/BlogDetalle';
 import CatalogoConectado from './pages/CatalogoConectado';
-import { RUTA_CATALOGO_CONECTADO } from './context/catalogo';
+import RevisionCarritoConectado from './pages/RevisionCarritoConectado';
+import CompraConectada from './pages/CompraConectada';
+import { RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO,
+    RUTA_COMPRA_CONECTADA } from './context/catalogo';
 
 function App() {
 
@@ -73,6 +76,12 @@ function App() {
                         <Route path="categorias" element={<Categorias />} />
                         <Route path="ofertas" element={<Ofertas />} />
                         <Route path=":id" element={<DetalleProducto />} />
+                    </Route>
+
+                    <Route element={<RevisionCarritoConectado />}>
+                        <Route path={RUTA_CARRITO_CONECTADO} element={<Carrito conectado />} />
+                        <Route path={RUTA_CHECKOUT_CONECTADO} element={<Checkout conectado />} />
+                        <Route path={RUTA_COMPRA_CONECTADA} element={<CompraConectada />} />
                     </Route>
 
                     <Route path="/carrito" element={<Carrito />} />

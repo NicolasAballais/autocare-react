@@ -6,6 +6,7 @@ import {
     useState
 } from 'react';
 import { esIdProductoLocal, mismoIdProducto } from '../services/carritoService.js';
+import { CarritoConectadoProvider } from './CarritoConectadoContext.jsx';
 
 const CarritoContext = createContext();
 
@@ -146,7 +147,7 @@ export function CarritoProvider({ children }) {
                 total
             }}
         >
-            {children}
+            <CarritoConectadoProvider>{children}</CarritoConectadoProvider>
         </CarritoContext.Provider>
     );
 }

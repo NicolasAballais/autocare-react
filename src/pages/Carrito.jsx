@@ -1,16 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { useCarrito } from '../context/CarritoContext';
+import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
+import { RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO } from '../context/catalogo.js';
+import ImportarCarritoLocal from '../components/ImportarCarritoLocal.jsx';
 
 
-export default function Carrito() {
+export default function Carrito({ conectado = false }) {
 
+    const local = useCarrito();
+    const remoto = useCarritoConectado();
+    const revision = useOutletContext();
     const {
-        carrito,
         cantidadTotal,
-        total,
         cambiarCantidad,
         eliminarProducto
-    } = useCarrito();
+    } = conectado ? remoto : local;
+    const carrito = conectado ? revision.lineas : local.carrito;
+    const total = conectado ? revision.total : local.total;
+    const bloqueado = conectado && Boolean(remoto.intento);
 
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -46,7 +53,7 @@ export default function Carrito() {
         <main className="container my-5">
 
             <h1 className="mb-4">
-                Carrito de Compras
+                {conectado ? 'Carrito conectado' : 'Carrito de Compras'}
             </h1>
 
 
@@ -72,7 +79,7 @@ export default function Carrito() {
                     </p>
 
                     <Link
-                        to="/productos"
+                        to={conectado ? RUTA_CATALOGO_CONECTADO : '/productos'}
                         className="btn btn-danger"
                     >
                         Ver productos
@@ -235,12 +242,14 @@ export default function Carrito() {
                                                             max={item.stock}
                                                             step="1"
                                                             value={item.cantidad}
+                                                            disabled={bloqueado || (conectado && item.stock < 1)}
                                                             onChange={(event) =>
                                                                 cambiarCantidad(
                                                                     item.id,
                                                                     Number(
                                                                         event.target.value
-                                                                    )
+                                                                    ),
+                                                                    item.stock
                                                                 )
                                                             }
                                                         />
@@ -249,6 +258,7 @@ export default function Carrito() {
                                                         <button
                                                             type="button"
                                                             className="btn btn-outline-danger btn-sm"
+                                                            disabled={bloqueado}
                                                             onClick={() =>
                                                                 eliminarProducto(
                                                                     item.id
@@ -312,21 +322,26 @@ export default function Carrito() {
 
 
                         <h3>
-                            Total:{' '}
+                            {conectado ? 'Total estimado: ' : 'Total: '}
                             {formatoPrecio.format(total)}
                         </h3>
 
 
-                        <Link
-                            to="/checkout"
-                            className="btn btn-danger mt-3"
-                        >
-                            Continuar al checkout
-                        </Link>
+                        {conectado && !revision.puedeContinuar ? (
+                            <button type="button" className="btn btn-danger mt-3" disabled>Continuar al checkout</button>
+                        ) : (
+                            <Link to={conectado ? RUTA_CHECKOUT_CONECTADO : '/checkout'} className="btn btn-danger mt-3">
+                                Continuar al checkout
+                            </Link>
+                        )}
 
                     </div>
                 </>
 
+            )}
+
+            {conectado && !bloqueado && (
+                <ImportarCarritoLocal carritoLocal={local.carrito} productos={revision.productos} aplicar={remoto.aplicarPropuesta} />
             )}
 
         </main>

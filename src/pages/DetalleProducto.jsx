@@ -11,6 +11,8 @@ import {
     useCarrito
 } from '../context/CarritoContext';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
+import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
+import { mismoIdProducto } from '../services/carritoService.js';
 
 
 export default function DetalleProducto() {
@@ -23,11 +25,13 @@ export default function DetalleProducto() {
     const {
         agregarProducto
     } = useCarrito();
+    const remoto = useCarritoConectado();
 
 
     const productos = conectado ? catalogo.productos : obtenerProductos();
     const idProducto = conectado ? id : Number(id);
-    const producto = productos.find((producto) => producto.id === idProducto);
+    const producto = productos.find((producto) => conectado
+        ? mismoIdProducto(producto.id, idProducto) : producto.id === idProducto);
 
 
     if (!producto) {
@@ -57,6 +61,9 @@ export default function DetalleProducto() {
         );
 
     const precioFinal = conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto);
+    const cantidadEnCarrito = conectado
+        ? remoto.carrito.find((linea) => mismoIdProducto(linea.id, producto.id))?.cantidad ?? 0
+        : 0;
 
     const enOferta =
         productoEstaEnOferta(
@@ -76,6 +83,10 @@ export default function DetalleProducto() {
 
 
     function agregarConPrecioFinal() {
+        if (conectado) {
+            remoto.agregarProducto(producto);
+            return;
+        }
 
         agregarProducto({
             ...producto,
@@ -216,12 +227,13 @@ export default function DetalleProducto() {
                         <button
                             type="button"
                             className="btn btn-danger"
-                            disabled={conectado || producto.stock <= 0}
-                            onClick={conectado ? undefined : agregarConPrecioFinal}
+                            disabled={producto.stock <= 0 ||
+                                (conectado && (remoto.intento || cantidadEnCarrito >= producto.stock))}
+                            onClick={agregarConPrecioFinal}
                         >
                             <i className="bi bi-cart-plus me-2"></i>
 
-                            {conectado ? 'Solo lectura' : 'Agregar al carrito'}
+                            {conectado ? 'Agregar al carrito conectado' : 'Agregar al carrito'}
                         </button>
 
 

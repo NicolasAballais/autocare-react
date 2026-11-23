@@ -1,24 +1,29 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 
 import { useCarrito } from '../context/CarritoContext';
+import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
+import { RUTA_CATALOGO_CONECTADO, RUTA_COMPRA_CONECTADA } from '../context/catalogo.js';
 import { obtenerSesion } from '../services/usuariosService';
 
 
-export default function Checkout() {
+export default function Checkout({ conectado = false }) {
 
-    const {
-        carrito,
-        cantidadTotal,
-        total
-    } = useCarrito();
+    const local = useCarrito();
+    const remoto = useCarritoConectado();
+    const revision = useOutletContext();
+    const carrito = conectado ? revision.lineas : local.carrito;
+    const cantidadTotal = conectado ? remoto.cantidadTotal : local.cantidadTotal;
+    const total = conectado ? revision.total : local.total;
+    const { state } = useLocation();
+    const entregaPrevia = conectado ? state : null;
 
     const navigate = useNavigate();
 
     const sesion = obtenerSesion();
 
 
-    const [datosCliente, setDatosCliente] = useState({
+    const [datosCliente, setDatosCliente] = useState(entregaPrevia?.datosCliente ?? {
 
         nombre: sesion
             ? `${sesion.nombre || ''} ${sesion.apellido || ''}`.trim()
@@ -40,7 +45,7 @@ export default function Checkout() {
 
 
     const [tipoEntrega, setTipoEntrega] =
-        useState('');
+        useState(entregaPrevia?.tipoEntrega ?? '');
 
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -67,16 +72,13 @@ export default function Checkout() {
         evento.preventDefault();
 
 
-        if (carrito.length === 0) {
+        if (carrito.length === 0 || (conectado && !revision.puedeContinuar)) {
             return;
         }
 
 
-        navigate('/pago', {
-            state: {
-                datosCliente,
-                tipoEntrega
-            }
+        navigate(conectado ? RUTA_COMPRA_CONECTADA : '/pago', {
+            state: { datosCliente, tipoEntrega }
         });
     }
 
@@ -104,7 +106,7 @@ export default function Checkout() {
                     <hr />
 
                     <Link
-                        to="/productos"
+                        to={conectado ? RUTA_CATALOGO_CONECTADO : '/productos'}
                         className="btn btn-danger"
                     >
                         Ver productos
@@ -121,8 +123,10 @@ export default function Checkout() {
         <main className="container my-5">
 
             <h1 className="mb-4">
-                Checkout
+                {conectado ? 'Checkout conectado' : 'Checkout'}
             </h1>
+
+            {conectado && <p>Los datos de entrega se usan en esta sesión. Spring Boot recibe los productos y cantidades.</p>}
 
 
             <form onSubmit={continuarPago}>
@@ -364,15 +368,16 @@ export default function Checkout() {
 
 
                                 <h4 className="text-danger">
-                                    Total: {formatoPrecio.format(total)}
+                                    {conectado ? 'Total estimado: ' : 'Total: '}{formatoPrecio.format(total)}
                                 </h4>
 
 
                                 <button
                                     type="submit"
                                     className="btn btn-danger w-100 mt-3"
+                                    disabled={conectado && !revision.puedeContinuar}
                                 >
-                                    Continuar al pago
+                                    {conectado ? 'Revisar compra' : 'Continuar al pago'}
                                 </button>
 
                             </div>

@@ -1,7 +1,8 @@
 import { Link, useMatch } from 'react-router-dom';
 import { obtenerSesion, cerrarSesion } from '../services/usuariosService';
 import { useCarrito } from '../context/CarritoContext';
-import { RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
+import { RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
+import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 
 export default function Navbar() {
 
@@ -9,6 +10,7 @@ export default function Navbar() {
 
     const sesion = obtenerSesion();
     const { cantidadTotal } = useCarrito();
+    const remoto = useCarritoConectado();
 
     function manejarCerrarSesion() {
         cerrarSesion();
@@ -162,18 +164,17 @@ export default function Navbar() {
 
                     )}
 
-                    {!conectado && (
-                        <Link
-                            to="/carrito"
-                            className="nav-link text-white position-relative ms-3"
-                        >
-                            <i className="bi bi-cart3 fs-4"></i>
+                    <Link
+                        to={conectado ? RUTA_CARRITO_CONECTADO : '/carrito'}
+                        aria-label={conectado ? 'Carrito conectado' : undefined}
+                        className="nav-link text-white position-relative ms-3"
+                    >
+                        <i className="bi bi-cart3 fs-4"></i>
 
-                            <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
-                                {cantidadTotal}
-                            </span>
-                        </Link>
-                    )}
+                        <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
+                            {conectado ? remoto.cantidadTotal : cantidadTotal}
+                        </span>
+                    </Link>
 
                 </div>
 
