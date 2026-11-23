@@ -10,21 +10,21 @@ const describirAviso = {
     'cantidad-invalida': () => 'Cantidad inválida'
 };
 
-export default function ImportarCarritoLocal({ carritoLocal, productos, aplicar }) {
+export default function ImportarCarritoLocal({ carritoLocal, productos, aplicar, origen = 'carrito local' }) {
     const [propuesta, setPropuesta] = useState(null);
 
     if (!carritoLocal.length) return null;
 
     return (
-        <section className="card p-3 mt-4" aria-label="Importar carrito local">
+        <section className="card p-3 mt-4" aria-label={`Importar ${origen}`}>
             <button type="button" className="btn btn-outline-secondary align-self-start" disabled={!productos}
                 onClick={() => setPropuesta(proponerCarritoConectado(carritoLocal, productos))}>
-                Revisar importación del carrito local
+                Revisar importación del {origen}
             </button>
             {propuesta && (
                 <div className="mt-3">
                     <h2 className="h5">Propuesta de importación</h2>
-                    <p>Se conserva el carrito local. Si un producto ya está en el carrito conectado, se toma la mayor cantidad.</p>
+                    <p>Se conserva el {origen}. Si un producto ya está en el carrito conectado, se toma la mayor cantidad.</p>
                     {propuesta.carritoPropuesto.length ? (
                         <ul>{propuesta.carritoPropuesto.map((linea) => (
                             <li key={linea.id}>{linea.nombre} × {linea.cantidad} · {formato.format(linea.precio)} por unidad</li>

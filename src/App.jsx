@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 import './App.css';
 
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 import RutaAdmin from './components/RutaAdmin';
+import RutaConectada from './components/RutaConectada';
 
 import Index from './pages/Index';
 import Blog from './pages/Blog';
@@ -48,8 +49,19 @@ import BlogDetalle from './pages/BlogDetalle';
 import CatalogoConectado from './pages/CatalogoConectado';
 import RevisionCarritoConectado from './pages/RevisionCarritoConectado';
 import CompraConectada from './pages/CompraConectada';
-import { RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO,
-    RUTA_COMPRA_CONECTADA } from './context/catalogo';
+import OrdenesConectadas from './pages/OrdenesConectadas';
+import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO,
+    RUTA_COMPRA_CONECTADA, RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO,
+    RUTA_REGISTRO_CONECTADO } from './context/catalogo';
+
+const ROLES_COMPRA = ['ADMIN', 'CLIENTE'];
+const PAGINAS_ADMIN = [
+    ['', AdminPanel], ['/productos', AdminProductos], ['/productos/nuevo', AdminProductoNuevo],
+    ['/productos/editar/:id', AdminProductoEditar], ['/ordenes', AdminOrdenes],
+    ['/notificaciones', AdminNotificaciones], ['/incidencias', AdminIncidencias],
+    ['/categorias', AdminCategorias], ['/usuarios', AdminUsuarios], ['/usuarios/:id', AdminUsuarioDetalle],
+    ['/usuarios/:id/editar', AdminUsuarioEditar], ['/reportes', AdminReportes], ['/usuarios/nuevo', AdminUsuarioNuevo]
+];
 
 function App() {
 
@@ -71,6 +83,14 @@ function App() {
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/productos/:id" element={<DetalleProducto />} />
 
+                    <Route path={RUTA_LOGIN_CONECTADO} element={<Login conectado />} />
+                    <Route path={RUTA_REGISTRO_CONECTADO} element={<Register conectado />} />
+                    <Route element={<RutaConectada />}>
+                        <Route path={RUTA_PERFIL_CONECTADO} element={<Perfil conectado />} />
+                        <Route path={RUTA_ORDENES_CONECTADAS} element={<OrdenesConectadas />} />
+                        <Route path={`${RUTA_ORDENES_CONECTADAS}/:id`} element={<OrdenesConectadas />} />
+                    </Route>
+
                     <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>
                         <Route index element={<Productos />} />
                         <Route path="categorias" element={<Categorias />} />
@@ -80,8 +100,10 @@ function App() {
 
                     <Route element={<RevisionCarritoConectado />}>
                         <Route path={RUTA_CARRITO_CONECTADO} element={<Carrito conectado />} />
-                        <Route path={RUTA_CHECKOUT_CONECTADO} element={<Checkout conectado />} />
-                        <Route path={RUTA_COMPRA_CONECTADA} element={<CompraConectada />} />
+                        <Route path={RUTA_CHECKOUT_CONECTADO}
+                            element={<RutaConectada roles={ROLES_COMPRA} porUsuario><Checkout conectado /></RutaConectada>} />
+                        <Route path={RUTA_COMPRA_CONECTADA}
+                            element={<RutaConectada roles={ROLES_COMPRA} porUsuario><CompraConectada /></RutaConectada>} />
                     </Route>
 
                     <Route path="/carrito" element={<Carrito />} />
@@ -97,22 +119,23 @@ function App() {
                     <Route path="/incidencias" element={<Incidencias />} />
                     <Route path="/incidencias/nueva" element={<NuevaIncidencia />} />
 
-                    <Route path="/admin" element={<RutaAdmin><AdminPanel /></RutaAdmin>} />
-                    <Route path="/admin/productos" element={<RutaAdmin><AdminProductos /></RutaAdmin>} />
-                    <Route path="/admin/productos/nuevo" element={<RutaAdmin><AdminProductoNuevo /></RutaAdmin>} />
-                    <Route path="/admin/productos/editar/:id" element={<RutaAdmin><AdminProductoEditar /></RutaAdmin>} />
-                    <Route path="/admin/ordenes" element={<RutaAdmin><AdminOrdenes /></RutaAdmin>} />
-                    <Route path="/admin/notificaciones" element={<RutaAdmin><AdminNotificaciones /></RutaAdmin>} />
-                    <Route path="/admin/incidencias" element={<RutaAdmin><AdminIncidencias /></RutaAdmin>} />
+                    {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
+                        <Route key={ruta} path={`/admin${ruta}`} element={<RutaAdmin><Pagina /></RutaAdmin>} />
+                    ))}
+                    <Route element={<RutaConectada roles={['ADMIN']} />}>
+                        {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
+                            <Route key={ruta} path={`${RUTA_ADMIN_CONECTADA}${ruta}`} element={<>
+                                <p className="alert alert-info m-3">
+                                    Panel de demostración con datos locales.{' '}
+                                    <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes de Spring Boot</Link>
+                                </p>
+                                <Pagina />
+                            </>} />
+                        ))}
+                    </Route>
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="/categorias" element={<Categorias />} />
-                    <Route path="/admin/categorias" element={<RutaAdmin><AdminCategorias /></RutaAdmin>} />
-                    <Route path="/admin/usuarios" element={<RutaAdmin><AdminUsuarios /></RutaAdmin>} />
-                    <Route path="/admin/usuarios/:id" element={<RutaAdmin><AdminUsuarioDetalle /></RutaAdmin>} />
-                    <Route path="/admin/usuarios/:id/editar" element={<RutaAdmin><AdminUsuarioEditar /></RutaAdmin>} />
                     <Route path="/ofertas" element={<Ofertas />} />
-                    <Route path="/admin/reportes" element={<RutaAdmin><AdminReportes /></RutaAdmin>} />
-                    <Route path="/admin/usuarios/nuevo" element={<RutaAdmin><AdminUsuarioNuevo /></RutaAdmin>} />
                     <Route path="/blog/:id" element={<BlogDetalle />} />
 
 

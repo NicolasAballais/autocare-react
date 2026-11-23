@@ -9,8 +9,8 @@ export class ErrorApi extends Error {
     }
 }
 
-export async function obtenerJsonApi(ruta, { urlBase = URL_BASE_API, estadoEsperado, cache } = {}) {
-    return solicitarJsonApi(ruta, { urlBase, method: 'GET', estadoEsperado, cache });
+export async function obtenerJsonApi(ruta, { urlBase = URL_BASE_API, estadoEsperado, cache, cabeceras } = {}) {
+    return solicitarJsonApi(ruta, { urlBase, method: 'GET', estadoEsperado, cache, cabeceras });
 }
 
 export async function enviarJsonApi(ruta, cuerpo, { urlBase = URL_BASE_API, estadoEsperado, cabeceras } = {}) {

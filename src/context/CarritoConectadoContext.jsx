@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { esObjectId, lineaCarritoConectado, mismoIdProducto, normalizarIdProducto } from '../services/carritoService.js';
 import { EnvioOrdenBloqueado, generarClaveOrden, mismosProductos, prepararSolicitudOrden,
     solicitudDelIntento, validarOrdenConfirmada } from '../services/ordenesApi.js';
+import { useSesionConectada } from './sesionConectada.js';
 
 const CarritoConectadoContext = createContext();
 const CLAVE = 'carritoConectadoAutoCare';
@@ -9,38 +10,59 @@ const ESTADO_INICIAL = { carrito: [], intento: null, ordenConfirmada: null };
 const MOTIVOS_RECHAZO = { 400: 'Datos inválidos.', 404: 'Uno de los productos ya no está disponible.',
     409: 'Stock insuficiente o conflicto de idempotencia o inventario.' };
 
-function leerCarritoConectado() {
+function leerAlmacenamiento(clave) {
     try {
-        const estado = JSON.parse(localStorage.getItem(CLAVE));
-        if (Array.isArray(estado?.carrito)) return estado;
+        return JSON.parse(localStorage.getItem(clave));
     } catch {
-        // Se conserva el valor almacenado hasta que el usuario edite el carrito conectado.
+        return null;
     }
-    return ESTADO_INICIAL;
+}
+
+function leerCarritoConectado(clave, compradorId) {
+    const estado = leerAlmacenamiento(clave);
+    if (!Array.isArray(estado?.carrito)) return ESTADO_INICIAL;
+    return {
+        carrito: estado.carrito,
+        intento: compradorId && estado.intento?.compradorId === compradorId ? estado.intento : null,
+        intentoRechazado: compradorId && estado.intentoRechazado?.compradorId === compradorId ? estado.intentoRechazado : null,
+        ordenConfirmada: compradorId && estado.compradorId === compradorId ? estado.ordenConfirmada : null
+    };
 }
 
 export function CarritoConectadoProvider({ children }) {
-    const [estado, setEstado] = useState(leerCarritoConectado);
-    const [procesando, setProcesando] = useState(false);
-    const [mensaje, setMensaje] = useState(null);
-    const operacionEnCurso = useRef(false);
+    const sesion = useSesionConectada();
+    const compradorId = sesion.usuario?.id;
+    const puedeComprar = ['ADMIN', 'CLIENTE'].includes(sesion.usuario?.rol);
+    const clave = compradorId ? `${CLAVE}:${compradorId}` : CLAVE;
+    const leer = () => leerCarritoConectado(clave, compradorId);
+    const [vista, setVista] = useState(() => ({ clave, datos: leer() }));
+    const [procesos, setProcesos] = useState([]);
+    const [aviso, setAviso] = useState(null);
+    const operaciones = useRef(new Set());
+    const estado = vista.clave === clave ? vista.datos : leer();
+    const procesando = procesos.includes(clave);
+    const mensaje = aviso?.clave === clave ? aviso.mensaje : null;
+    const setEstado = (datos) => setVista({ clave, datos });
+    const setMensaje = (mensajeNuevo) => setAviso({ clave, mensaje: mensajeNuevo });
 
     useEffect(() => {
         function sincronizar(evento) {
-            if (evento.key === CLAVE) setEstado(leerCarritoConectado());
+            if (evento.key === clave) setVista({ clave, datos: leerCarritoConectado(clave, compradorId) });
         }
         window.addEventListener('storage', sincronizar);
         return () => window.removeEventListener('storage', sincronizar);
-    }, []);
+    }, [clave, compradorId]);
 
     function guardarEstado(nuevoEstado) {
-        localStorage.setItem(CLAVE, JSON.stringify(nuevoEstado));
+        const datos = compradorId ? { ...nuevoEstado, compradorId } :
+            { ...leerAlmacenamiento(clave), carrito: nuevoEstado.carrito };
+        localStorage.setItem(clave, JSON.stringify(datos));
         setEstado(nuevoEstado);
     }
 
     function actualizarCarrito(actualizar) {
-        const actual = leerCarritoConectado();
-        if (actual.intento || operacionEnCurso.current) return;
+        const actual = leer();
+        if (sesion.usuario?.rol === 'VENDEDOR' || actual.intento || operaciones.current.has(clave)) return;
         const carrito = actualizar(actual.carrito);
         guardarEstado({ ...actual, carrito, ordenConfirmada: null });
         setMensaje(null);
@@ -79,8 +101,8 @@ export function CarritoConectadoProvider({ children }) {
     }
 
     function estadoDelIntento(intento) {
-        const actual = leerCarritoConectado();
-        if (actual.intento?.id === intento.id && actual.intento.cuerpo === intento.cuerpo) return actual;
+        const actual = leer();
+        if (intento.compradorId === compradorId && actual.intento?.id === intento.id && actual.intento.cuerpo === intento.cuerpo) return actual;
         setEstado(actual);
         return null;
     }
@@ -100,35 +122,36 @@ export function CarritoConectadoProvider({ children }) {
 
     async function consultarResultado(intento, consultar) {
         try {
-            guardarConfirmacion(await consultar(intento.id), intento);
+            guardarConfirmacion(await sesion.solicitar((token) => consultar(intento.id, token), compradorId), intento);
         } catch (error) {
             if (estadoDelIntento(intento)) {
-                const detalle = error.estado === 404 ? '' : ` ${error.message}`;
+                const detalle = error.estado === 404 ? '' : error.estado === 403 ? ' No tienes permiso para consultar esta orden.' :
+                    error.estado === 401 ? ' Inicia sesión con la cuenta que hizo el intento.' : ` ${error.message}`;
                 setMensaje({ texto: `La orden sigue sin confirmación. Puedes volver a consultarla.${detalle}` });
             }
         }
     }
 
     async function ejecutarOperacion(operacion) {
-        if (operacionEnCurso.current) return;
-        operacionEnCurso.current = true;
-        setProcesando(true);
+        if (!puedeComprar || !esObjectId(compradorId) || operaciones.current.has(clave)) return;
+        operaciones.current.add(clave);
+        setProcesos((actuales) => [...actuales, clave]);
         setMensaje(null);
         try {
             // El bloqueo del navegador coordina pestañas de este origen cuando está disponible.
-            if (navigator.locks) await navigator.locks.request(CLAVE, operacion);
+            if (navigator.locks) await navigator.locks.request(clave, operacion);
             else await operacion();
         } catch {
             setMensaje({ texto: 'No se pudo guardar o actualizar el intento de compra. Comprueba su estado antes de reenviar.' });
         } finally {
-            operacionEnCurso.current = false;
-            setProcesando(false);
+            operaciones.current.delete(clave);
+            setProcesos((actuales) => actuales.filter((item) => item !== clave));
         }
     }
 
     async function enviarIntento(intento, enviar, consultar, reintento = false) {
         try {
-            guardarConfirmacion(await enviar(intento), intento);
+            guardarConfirmacion(await sesion.solicitar((token) => enviar(intento, token), compradorId), intento);
         } catch (error) {
             const actual = estadoDelIntento(intento);
             if (!actual) return;
@@ -141,6 +164,9 @@ export function CarritoConectadoProvider({ children }) {
             const motivo = MOTIVOS_RECHAZO[error.estado];
             if (motivo || envioBloqueado) {
                 setMensaje({ texto: [motivo, error.message].filter(Boolean).join(' '), campos: error.campos });
+            } else if (error.estado === 401 || error.estado === 403) {
+                setMensaje({ texto: error.estado === 401 ? 'Inicia sesión con la cuenta que hizo el intento.' :
+                    'La cuenta no tiene permiso para completar esta compra.' });
             } else {
                 await consultarResultado(intento, consultar);
             }
@@ -149,7 +175,7 @@ export function CarritoConectadoProvider({ children }) {
 
     function registrarCompra(solicitud, enviar, consultar) {
         return ejecutarOperacion(async () => {
-            const actual = leerCarritoConectado();
+            const actual = leer();
             if (actual.intento || actual.ordenConfirmada) {
                 setEstado(actual);
                 return;
@@ -161,7 +187,8 @@ export function CarritoConectadoProvider({ children }) {
             }
             const cuerpo = JSON.stringify(solicitud);
             const previo = actual.intentoRechazado;
-            const intento = previo?.cuerpo === cuerpo && solicitudDelIntento(previo) ? previo : { id: generarClaveOrden(), cuerpo };
+            const intento = previo?.cuerpo === cuerpo && solicitudDelIntento(previo) ? previo :
+                { id: generarClaveOrden(), cuerpo, compradorId };
             guardarEstado({ ...actual, intento, intentoRechazado: null });
             await enviarIntento(intento, enviar, consultar);
         });
@@ -169,22 +196,24 @@ export function CarritoConectadoProvider({ children }) {
 
     function consultarPendiente(consultar) {
         return ejecutarOperacion(async () => {
-            const { intento } = leerCarritoConectado();
+            const { intento } = leer();
             if (solicitudDelIntento(intento)) await consultarResultado(intento, consultar);
         });
     }
 
     function reintentarCompra(enviar, consultar) {
         return ejecutarOperacion(async () => {
-            const { intento } = leerCarritoConectado();
+            const { intento } = leer();
             if (solicitudDelIntento(intento)) await enviarIntento(intento, enviar, consultar, true);
         });
     }
 
     const cantidadTotal = estado.carrito.reduce((suma, linea) => suma + linea.cantidad, 0);
+    const carritoSinSesion = puedeComprar ? leerCarritoConectado(CLAVE).carrito : [];
     return (
         <CarritoConectadoContext.Provider value={{ ...estado, cantidadTotal, agregarProducto, cambiarCantidad,
-            eliminarProducto, aplicarPropuesta, registrarCompra, consultarPendiente, reintentarCompra, procesando, mensaje }}>
+            eliminarProducto, aplicarPropuesta, registrarCompra, consultarPendiente, reintentarCompra, procesando, mensaje,
+            carritoSinSesion }}>
             {children}
         </CarritoConectadoContext.Provider>
     );

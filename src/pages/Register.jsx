@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { registrarUsuario } from '../services/usuariosService';
+import { useSesionConectada } from '../context/sesionConectada.js';
+import { RUTA_LOGIN_CONECTADO } from '../context/catalogo.js';
 
 
-export default function Register() {
+export default function Register({ conectado = false }) {
 
     const navigate = useNavigate();
+    const { state } = useLocation();
+    const sesion = useSesionConectada();
 
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
@@ -13,13 +17,17 @@ export default function Register() {
     const [password, setPassword] = useState('');
     const [confirmarPassword, setConfirmarPassword] = useState('');
     const [mensaje, setMensaje] = useState('');
+    const [procesando, setProcesando] = useState(false);
+    const minimo = conectado ? 8 : 4;
+    const maximo = conectado ? 72 : 10;
 
 
-    function manejarRegistro(evento) {
+    async function manejarRegistro(evento) {
 
         evento.preventDefault();
 
         setMensaje('');
+        if (procesando) return;
 
 
         const nombreLimpio = nombre.trim();
@@ -57,10 +65,10 @@ export default function Register() {
         }
 
 
-        if (correoLimpio.length > 100) {
+        if (correoLimpio.length > (conectado ? 254 : 100)) {
 
             setMensaje(
-                'El correo no puede superar los 100 caracteres.'
+                'El correo supera la longitud permitida.'
             );
 
             return;
@@ -68,12 +76,12 @@ export default function Register() {
 
 
         if (
-            password.length < 4 ||
-            password.length > 10
+            password.length < minimo ||
+            password.length > maximo || (conectado && new TextEncoder().encode(password).length > 72)
         ) {
 
             setMensaje(
-                'La contraseña debe tener entre 4 y 10 caracteres.'
+                `La contraseña debe tener entre ${minimo} y ${maximo} caracteres${conectado ? ' y un máximo de 72 bytes' : ''}.`
             );
 
             return;
@@ -90,7 +98,29 @@ export default function Register() {
         }
 
 
-        const resultado = registrarUsuario({
+        if (conectado) {
+            if (!sesion.habilitado) return;
+            const nombreCompleto = `${nombreLimpio} ${apellidoLimpio}`;
+            if (nombreCompleto.length > 100) {
+                setMensaje('El nombre completo no puede superar los 100 caracteres.');
+                return;
+            }
+            setProcesando(true);
+            try {
+                await sesion.registrar({ nombre: nombreCompleto, correo: correoLimpio, contrasena: password });
+                navigate(RUTA_LOGIN_CONECTADO, { replace: true, state: { ...state, cuentaCreada: true } });
+            } catch (error) {
+                setMensaje(error.estado === 409 ? 'Ya existe una cuenta con ese correo.' :
+                    error.estado === 400 ? 'Revisa el nombre, correo y contraseña de registro.' : 'No se pudo registrar la cuenta conectada.');
+            } finally {
+                setPassword('');
+                setConfirmarPassword('');
+                setProcesando(false);
+            }
+            return;
+        }
+
+        const resultado = await registrarUsuario({
             nombre: nombreLimpio,
             apellido: apellidoLimpio,
             correo: correoLimpio,
@@ -124,7 +154,7 @@ export default function Register() {
                         <div className="card-body p-4">
 
                             <h1 className="mb-1">
-                                Crear cuenta
+                                {conectado ? 'Crear cuenta conectada' : 'Crear cuenta'}
                             </h1>
 
                             <p className="text-muted mb-4">
@@ -134,11 +164,13 @@ export default function Register() {
 
                             {mensaje && (
 
-                                <div className="alert alert-danger">
+                                <div className="alert alert-danger" role="alert">
                                     {mensaje}
                                 </div>
 
                             )}
+
+                            {conectado && !sesion.habilitado && <p className="alert alert-info">La prueba de autenticación conectada está deshabilitada.</p>}
 
 
                             <form onSubmit={manejarRegistro}>
@@ -212,7 +244,7 @@ export default function Register() {
                                         onChange={(e) =>
                                             setCorreo(e.target.value)
                                         }
-                                        maxLength="100"
+                                        maxLength={conectado ? 254 : 100}
                                         required
                                     />
 
@@ -236,13 +268,14 @@ export default function Register() {
                                         onChange={(e) =>
                                             setPassword(e.target.value)
                                         }
-                                        minLength="4"
-                                        maxLength="10"
+                                        minLength={minimo}
+                                        maxLength={maximo}
+                                        autoComplete="new-password"
                                         required
                                     />
 
                                     <div className="form-text">
-                                        Debe contener entre 4 y 10 caracteres.
+                                        Debe contener entre {minimo} y {maximo} caracteres.
                                     </div>
 
                                 </div>
@@ -265,8 +298,9 @@ export default function Register() {
                                         onChange={(e) =>
                                             setConfirmarPassword(e.target.value)
                                         }
-                                        minLength="4"
-                                        maxLength="10"
+                                        minLength={minimo}
+                                        maxLength={maximo}
+                                        autoComplete="new-password"
                                         required
                                     />
 
@@ -276,6 +310,7 @@ export default function Register() {
                                 <button
                                     type="submit"
                                     className="btn btn-danger w-100"
+                                    disabled={procesando || (conectado && !sesion.habilitado)}
                                 >
                                     Crear cuenta
                                 </button>
@@ -289,7 +324,7 @@ export default function Register() {
                                     ¿Ya tienes una cuenta?{' '}
                                 </span>
 
-                                <Link to="/login">
+                                <Link to={conectado ? RUTA_LOGIN_CONECTADO : '/login'} state={conectado ? state : undefined}>
                                     Iniciar sesión
                                 </Link>
 

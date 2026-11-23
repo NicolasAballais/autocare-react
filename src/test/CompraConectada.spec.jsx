@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CarritoProvider } from '../context/CarritoContext.jsx';
 import { RUTA_CARRITO_CONECTADO, RUTA_CHECKOUT_CONECTADO, RUTA_COMPRA_CONECTADA } from '../context/catalogo.js';
+import { SesionConectadaContext } from '../context/sesionConectada.js';
 import Carrito from '../pages/Carrito.jsx';
 import Checkout from '../pages/Checkout.jsx';
 import CompraConectada from '../pages/CompraConectada.jsx';
@@ -9,7 +10,10 @@ import RevisionCarritoConectado from '../pages/RevisionCarritoConectado.jsx';
 import { lineaCarritoConectado } from '../services/carritoService.js';
 import { crearEnvioOrden, enviarOrdenApi, generarClaveOrden } from '../services/ordenesApi.js';
 
-const CLAVE = 'carritoConectadoAutoCare';
+const COMPRADOR = '6400000000000000000000a1';
+const OTRO_COMPRADOR = '6400000000000000000000a2';
+const TOKEN = 'token-simulado';
+const CLAVE = `carritoConectadoAutoCare:${COMPRADOR}`;
 const ID = '6600000000000000000000a1';
 const ORDEN_ID = '6700000000000000000000a2';
 const producto = { id: ID, codigo: 'TEST-ACE001', nombre: 'Aceite de prueba', precio: 35000,
@@ -19,7 +23,7 @@ const orden = (id, cantidad = 1) => ({ id, estado: 'PROCESANDO', total: 27500,
 const solicitud = { productos: [{ productoId: ID, cantidad: 1 }] };
 const entrega = {
     pathname: RUTA_COMPRA_CONECTADA,
-    state: { datosCliente: { nombre: 'Cliente de prueba' }, tipoEntrega: 'Envío estándar' }
+    state: { compradorId: COMPRADOR, datosCliente: { nombre: 'Cliente de prueba' }, tipoEntrega: 'Envío estándar' }
 };
 
 function guardarCarrito() {
@@ -37,14 +41,18 @@ function simulacionApi({ productos = [producto], post, getOrden } = {}) {
     });
 }
 
-function renderizar(entrada, simularEnvio = false) {
+function renderizar(entrada, simularEnvio = false, comprador = COMPRADOR) {
     const opciones = simularEnvio ? {
         envioHabilitado: true,
         enviar: crearEnvioOrden({ habilitado: true })
     } : {};
 
-    return render(
+    const vista = (id) => (
         <MemoryRouter initialEntries={[entrada]}>
+            <SesionConectadaContext.Provider value={{
+                usuario: { id, nombre: 'Cliente de prueba', correo: 'test@example.test', rol: 'CLIENTE' },
+                solicitar: (operacion) => operacion(() => TOKEN)
+            }}>
             <CarritoProvider>
                 <Link to={RUTA_CARRITO_CONECTADO}>Abrir carrito</Link>
                 <Routes>
@@ -55,8 +63,11 @@ function renderizar(entrada, simularEnvio = false) {
                     </Route>
                 </Routes>
             </CarritoProvider>
+            </SesionConectadaContext.Provider>
         </MemoryRouter>
     );
+    const resultado = render(vista(comprador));
+    return { ...resultado, cambiarCuenta: (id) => resultado.rerender(vista(id)) };
 }
 
 function posts(fetchSimulado) {
@@ -191,7 +202,8 @@ describe('Compra conectada', () => {
         const [, peticion] = posts(fetchSimulado)[0];
         const id = peticion.headers['Idempotency-Key'];
         expect(id).toMatch(/^[0-9a-f]{24}$/);
-        expect(intentoAlEnviar).toEqual({ id, cuerpo: peticion.body });
+        expect(peticion.headers.Authorization).toBe(`Bearer ${TOKEN}`);
+        expect(intentoAlEnviar).toEqual({ id, cuerpo: peticion.body, compradorId: COMPRADOR });
         expect(JSON.parse(peticion.body)).toEqual(solicitud);
         expect(JSON.parse(localStorage.getItem(CLAVE)).carrito.length).toBe(1);
         responder(Response.json(orden(id), { status: 201 }));
@@ -237,7 +249,9 @@ describe('Compra conectada', () => {
         fireEvent.click(await botonConfirmarHabilitado());
         await screen.findByText('La orden sigue sin confirmación. Puedes volver a consultarla.');
         const id = posts(fetchSimulado)[0][1].headers['Idempotency-Key'];
-        expect(fetchSimulado).toHaveBeenCalledWith(`/api/v1/ordenes/${id}`, jasmine.objectContaining({ method: 'GET' }));
+        expect(fetchSimulado).toHaveBeenCalledWith(`/api/v1/ordenes/${id}`, jasmine.objectContaining({
+            method: 'GET', headers: jasmine.objectContaining({ Authorization: `Bearer ${TOKEN}` })
+        }));
         expect(JSON.parse(localStorage.getItem(CLAVE)).carrito.length).toBe(1);
 
         vista.unmount();
@@ -306,7 +320,7 @@ describe('Compra conectada', () => {
         fireEvent.click(reintentar);
         expect(await screen.findByRole('heading', { name: 'Orden confirmada' })).toBeTruthy();
         expect(posts(fetchSimulado).map(([, { body, headers }]) => ({ cuerpo: body, id: headers['Idempotency-Key'] })))
-            .toEqual([intento, intento]);
+            .toEqual([{ id: intento.id, cuerpo: intento.cuerpo }, { id: intento.id, cuerpo: intento.cuerpo }]);
     });
 
     it('muestra un conflicto de clave y conserva el intento si el GET devuelve otras cantidades', async () => {
@@ -413,5 +427,26 @@ describe('Compra conectada', () => {
         const final = JSON.parse(localStorage.getItem(CLAVE));
         expect(final.carrito.map(({ id, cantidad }) => [id, cantidad])).toEqual([[ID, 1], [otro.id, 1]]);
         expect(final.ordenConfirmada.id).toBe(guardado.intento.id);
+    });
+
+    it('aísla la recuperación del intento al cambiar de comprador sin reenviarlo', async () => {
+        guardarCarrito();
+        const intento = { id: ORDEN_ID, cuerpo: JSON.stringify(solicitud), compradorId: COMPRADOR };
+        const original = JSON.parse(localStorage.getItem(CLAVE));
+        localStorage.setItem(CLAVE, JSON.stringify({ ...original, intento }));
+        const fetchSimulado = simulacionApi({ getOrden: () => Response.json(orden(ORDEN_ID)) });
+        const vista = renderizar(RUTA_COMPRA_CONECTADA, true);
+        expect(screen.getByText(new RegExp(ORDEN_ID))).toBeTruthy();
+
+        vista.cambiarCuenta(OTRO_COMPRADOR);
+        expect(screen.queryByText(new RegExp(ORDEN_ID))).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Consultar orden' })).toBeNull();
+        expect(fetchSimulado.calls.allArgs().filter(([url]) => url.includes('/ordenes'))).toEqual([]);
+
+        vista.cambiarCuenta(COMPRADOR);
+        fireEvent.click(screen.getByRole('button', { name: 'Consultar orden' }));
+        expect(await screen.findByRole('heading', { name: 'Orden confirmada' })).toBeTruthy();
+        expect(posts(fetchSimulado)).toEqual([]);
+        expect(localStorage.getItem(`carritoConectadoAutoCare:${OTRO_COMPRADOR}`)).toBeNull();
     });
 });

@@ -1,22 +1,50 @@
 ﻿import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { iniciarSesion } from '../services/usuariosService';
+import { useSesionConectada } from '../context/sesionConectada.js';
+import { RUTA_ADMIN_CONECTADA, RUTA_CATALOGO_CONECTADO, RUTA_ORDENES_CONECTADAS,
+    RUTA_REGISTRO_CONECTADO } from '../context/catalogo.js';
 
-export default function Login() {
+export default function Login({ conectado = false }) {
 
     const navigate = useNavigate();
+    const { state } = useLocation();
+    const sesion = useSesionConectada();
 
     const [correo, setCorreo] = useState('');
     const [password, setPassword] = useState('');
     const [mensaje, setMensaje] = useState('');
+    const [procesando, setProcesando] = useState(false);
 
-    function manejarLogin(evento) {
+    async function manejarLogin(evento) {
 
         evento.preventDefault();
 
         setMensaje('');
 
-        const resultado = iniciarSesion(
+        if (procesando) return;
+        if (conectado) {
+            if (!sesion.habilitado) return;
+            setProcesando(true);
+            try {
+                const usuario = await sesion.iniciarSesion({ correo: correo.trim(), contrasena: password });
+                if (!usuario) return;
+                const volver = state?.volver;
+                const destino = usuario.rol === 'VENDEDOR' ? RUTA_ORDENES_CONECTADAS :
+                    typeof volver === 'string' && volver.startsWith(`${RUTA_CATALOGO_CONECTADO}/`) ? volver :
+                        usuario.rol === 'ADMIN' ? RUTA_ADMIN_CONECTADA : RUTA_CATALOGO_CONECTADO;
+                navigate(destino, { replace: true });
+            } catch (error) {
+                setMensaje(error.estado === 401 ? 'Correo o contraseña incorrectos.' :
+                    'No se pudo iniciar sesión conectada. Revisa tus datos o vuelve a intentar.');
+            } finally {
+                setPassword('');
+                setProcesando(false);
+            }
+            return;
+        }
+
+        const resultado = await iniciarSesion(
             correo,
             password
         );
@@ -53,29 +81,34 @@ export default function Login() {
                                 </h3>
 
                                 <h2>
-                                    Iniciar Sesión
+                                    {conectado ? 'Iniciar sesión conectada' : 'Iniciar Sesión'}
                                 </h2>
 
                             </div>
 
                             {mensaje && (
 
-                                <div className="alert alert-danger">
+                                <div className="alert alert-danger" role="alert">
                                     {mensaje}
                                 </div>
 
                             )}
 
+                            {conectado && !sesion.habilitado && <p className="alert alert-info">La prueba de autenticación conectada está deshabilitada.</p>}
+                            {conectado && state?.cuentaCreada && <p className="alert alert-success" role="status">Cuenta creada. Ingresa con tus datos.</p>}
+
                             <form onSubmit={manejarLogin}>
 
                                 <div className="mb-3">
 
-                                    <label className="form-label">
+                                    <label className="form-label" htmlFor="correo-login">
                                         Correo Electrónico
                                     </label>
 
                                     <input
                                         type="email"
+                                        id="correo-login"
+                                        autoComplete="username"
                                         className="form-control"
                                         value={correo}
                                         onChange={(e) => setCorreo(e.target.value)}
@@ -87,12 +120,14 @@ export default function Login() {
 
                                 <div className="mb-3">
 
-                                    <label className="form-label">
+                                    <label className="form-label" htmlFor="clave-login">
                                         Contraseña
                                     </label>
 
                                     <input
                                         type="password"
+                                        id="clave-login"
+                                        autoComplete="current-password"
                                         className="form-control"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -104,6 +139,7 @@ export default function Login() {
                                 <button
                                     type="submit"
                                     className="btn btn-danger w-100"
+                                    disabled={procesando || (conectado && !sesion.habilitado)}
                                 >
                                     Ingresar
                                 </button>
@@ -117,7 +153,8 @@ export default function Login() {
                                 </span>
 
                                 <Link
-                                    to="/register"
+                                    to={conectado ? RUTA_REGISTRO_CONECTADO : '/register'}
+                                    state={conectado ? state : undefined}
                                     className="text-danger fw-bold"
                                 >
                                     Regístrate aquí

@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-d
 
 import { useCarrito } from '../context/CarritoContext';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
-import { RUTA_CATALOGO_CONECTADO, RUTA_COMPRA_CONECTADA } from '../context/catalogo.js';
+import { RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, RUTA_COMPRA_CONECTADA } from '../context/catalogo.js';
 import { obtenerSesion } from '../services/usuariosService';
+import { useSesionConectada } from '../context/sesionConectada.js';
 
 
 export default function Checkout({ conectado = false }) {
@@ -16,11 +17,12 @@ export default function Checkout({ conectado = false }) {
     const cantidadTotal = conectado ? remoto.cantidadTotal : local.cantidadTotal;
     const total = conectado ? revision.total : local.total;
     const { state } = useLocation();
-    const entregaPrevia = conectado ? state : null;
 
     const navigate = useNavigate();
 
-    const sesion = obtenerSesion();
+    const sesionRemota = useSesionConectada();
+    const sesion = conectado ? sesionRemota.usuario : obtenerSesion();
+    const entregaPrevia = conectado && state?.compradorId === sesion?.id ? state : null;
 
 
     const [datosCliente, setDatosCliente] = useState(entregaPrevia?.datosCliente ?? {
@@ -78,7 +80,7 @@ export default function Checkout({ conectado = false }) {
 
 
         navigate(conectado ? RUTA_COMPRA_CONECTADA : '/pago', {
-            state: { datosCliente, tipoEntrega }
+            state: conectado ? { datosCliente, tipoEntrega, compradorId: sesion.id } : { datosCliente, tipoEntrega }
         });
     }
 
@@ -111,6 +113,9 @@ export default function Checkout({ conectado = false }) {
                     >
                         Ver productos
                     </Link>
+                    {conectado && <Link to={RUTA_CARRITO_CONECTADO} className="btn btn-outline-secondary ms-2">
+                        Revisar carrito
+                    </Link>}
 
                 </div>
 

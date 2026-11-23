@@ -1,18 +1,28 @@
-import { Link, useMatch } from 'react-router-dom';
+import { Link, useMatch, useNavigate } from 'react-router-dom';
 import { obtenerSesion, cerrarSesion } from '../services/usuariosService';
 import { useCarrito } from '../context/CarritoContext';
-import { RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
+import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO,
+    RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO } from '../context/catalogo';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
+import { useSesionConectada } from '../context/sesionConectada';
 
 export default function Navbar() {
 
     const conectado = Boolean(useMatch(`${RUTA_CATALOGO_CONECTADO}/*`));
 
-    const sesion = obtenerSesion();
+    const navigate = useNavigate();
+    const sesionConectada = useSesionConectada();
+    const sesion = conectado ? sesionConectada.usuario : obtenerSesion();
+    const vendedor = conectado && sesion?.rol === 'VENDEDOR';
     const { cantidadTotal } = useCarrito();
     const remoto = useCarritoConectado();
 
     function manejarCerrarSesion() {
+        if (conectado) {
+            sesionConectada.cerrarSesion();
+            navigate(RUTA_CATALOGO_CONECTADO, { replace: true });
+            return;
+        }
         cerrarSesion();
         window.location.href = '/';
     }
@@ -78,9 +88,9 @@ export default function Navbar() {
                         <li className="nav-item">
                             <Link
                                 className="nav-link"
-                                to="/ordenes"
+                                to={conectado ? RUTA_ORDENES_CONECTADAS : '/ordenes'}
                             >
-                                Mis órdenes
+                                {conectado && ['ADMIN', 'VENDEDOR'].includes(sesion?.rol) ? 'Órdenes' : 'Mis órdenes'}
                             </Link>
                         </li>
 
@@ -95,12 +105,12 @@ export default function Navbar() {
                             </li>
                         )}
 
-                        {sesion?.rol === 'admin' && (
+                        {sesion?.rol === (conectado ? 'ADMIN' : 'admin') && (
 
                             <li className="nav-item">
 
                                 <Link
-                                    to="/admin"
+                                    to={conectado ? RUTA_ADMIN_CONECTADA : '/admin'}
                                     className="nav-link"
                                 >
                                     Administración
@@ -135,7 +145,7 @@ export default function Navbar() {
                         <div className="d-flex align-items-center gap-2 ms-auto">
 
                             <Link
-                                to="/perfil"
+                                to={conectado ? RUTA_PERFIL_CONECTADO : '/perfil'}
                                 className="text-white text-decoration-none"
                             >
                                 <i className="bi bi-person-circle fs-4 me-1"></i>
@@ -155,7 +165,7 @@ export default function Navbar() {
                     ) : (
 
                         <Link
-                            to="/login"
+                            to={conectado ? RUTA_LOGIN_CONECTADO : '/login'}
                             className="nav-link text-white ms-auto"
                         >
                             <i className="bi bi-person-circle fs-4 me-1"></i>
@@ -164,7 +174,7 @@ export default function Navbar() {
 
                     )}
 
-                    <Link
+                    {!vendedor && <Link
                         to={conectado ? RUTA_CARRITO_CONECTADO : '/carrito'}
                         aria-label={conectado ? 'Carrito conectado' : undefined}
                         className="nav-link text-white position-relative ms-3"
@@ -174,7 +184,7 @@ export default function Navbar() {
                         <span className="position-absolute top-5 start-5 translate-middle badge rounded-pill bg-danger">
                             {conectado ? remoto.cantidadTotal : cantidadTotal}
                         </span>
-                    </Link>
+                    </Link>}
 
                 </div>
 

@@ -6,7 +6,10 @@ import {
 } from '../services/usuariosService';
 
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminUsuarioNuevo() {
+    const baseAdmin = useBaseAdmin();
 
     const navigate = useNavigate();
 
@@ -34,14 +37,14 @@ export default function AdminUsuarioNuevo() {
     }
 
 
-    function manejarEnvio(evento) {
+    async function manejarEnvio(evento) {
 
         evento.preventDefault();
 
         setMensajeError('');
 
         const resultado =
-            registrarUsuario({
+            await registrarUsuario({
                 nombre: formulario.nombre.trim(),
                 apellido: formulario.apellido.trim(),
                 correo: formulario.correo.trim(),
@@ -62,7 +65,7 @@ export default function AdminUsuarioNuevo() {
         }
 
 
-        navigate('/admin/usuarios');
+        navigate(`${baseAdmin}/usuarios`);
     }
 
 
@@ -85,7 +88,7 @@ export default function AdminUsuarioNuevo() {
 
 
                 <Link
-                    to="/admin/usuarios"
+                    to={`${baseAdmin}/usuarios`}
                     className="btn btn-outline-secondary"
                 >
                     Volver

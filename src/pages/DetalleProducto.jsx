@@ -11,6 +11,7 @@ import {
     useCarrito
 } from '../context/CarritoContext';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
+import { useSesionConectada } from '../context/sesionConectada';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { mismoIdProducto } from '../services/carritoService.js';
 
@@ -19,6 +20,7 @@ export default function DetalleProducto() {
 
     const { id } = useParams();
     const catalogo = useCatalogoConectado();
+    const vendedor = useSesionConectada().usuario?.rol === 'VENDEDOR';
     const conectado = Boolean(catalogo);
     const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
 
@@ -224,7 +226,7 @@ export default function DetalleProducto() {
 
                     <div className="d-flex gap-2 mt-4">
 
-                        <button
+                        {(!conectado || !vendedor) && <button
                             type="button"
                             className="btn btn-danger"
                             disabled={producto.stock <= 0 ||
@@ -234,7 +236,7 @@ export default function DetalleProducto() {
                             <i className="bi bi-cart-plus me-2"></i>
 
                             {conectado ? 'Agregar al carrito conectado' : 'Agregar al carrito'}
-                        </button>
+                        </button>}
 
 
                         <Link

@@ -2,7 +2,10 @@ import { Link } from 'react-router-dom';
 import { obtenerClientes } from '../services/usuariosService';
 
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminUsuarios() {
+    const baseAdmin = useBaseAdmin();
 
     const clientes = obtenerClientes();
 
@@ -26,7 +29,7 @@ export default function AdminUsuarios() {
 
 
                 <Link
-                    to="/admin/usuarios/nuevo"
+                    to={`${baseAdmin}/usuarios/nuevo`}
                     className="btn btn-success"
                 >
                     <i className="bi bi-person-plus me-2"></i>
@@ -96,14 +99,14 @@ export default function AdminUsuarios() {
                                                 <div className="d-flex gap-2">
 
                                                     <Link
-                                                        to={`/admin/usuarios/${cliente.id}`}
+                                                        to={`${baseAdmin}/usuarios/${cliente.id}`}
                                                         className="btn btn-outline-primary btn-sm"
                                                     >
                                                         Ver detalle
                                                     </Link>
 
                                                     <Link
-                                                        to={`/admin/usuarios/${cliente.id}/editar`}
+                                                        to={`${baseAdmin}/usuarios/${cliente.id}/editar`}
                                                         className="btn btn-outline-secondary btn-sm"
                                                     >
                                                         Editar

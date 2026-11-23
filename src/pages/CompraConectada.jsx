@@ -4,6 +4,7 @@ import { RUTA_CHECKOUT_CONECTADO } from '../context/catalogo.js';
 import { enviarOrdenApi, obtenerOrdenApi, prepararSolicitudOrden, solicitudDelIntento,
     sonProductosTemporales } from '../services/ordenesApi.js';
 import { modoPruebaOrdenesActivo } from '../services/ordenesConfiguracion.js';
+import { useSesionConectada } from '../context/sesionConectada.js';
 
 const formatoPrecio = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' });
 
@@ -22,10 +23,13 @@ function MensajeCompra({ mensaje }) {
 
 export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesActivo(),
     enviar = enviarOrdenApi, consultar = obtenerOrdenApi }) {
-    const { datosCliente, tipoEntrega } = useLocation().state ?? {};
+    const { state } = useLocation();
+    const { usuario } = useSesionConectada();
+    const { datosCliente, tipoEntrega } = (state?.compradorId === usuario?.id ? state : null) ?? {};
     const { ordenConfirmada, intento, mensaje, procesando, registrarCompra, consultarPendiente,
         reintentarCompra } = useCarritoConectado();
     const { lineas, total, puedeContinuar, productos } = useOutletContext();
+    const rolPuedeComprar = ['ADMIN', 'CLIENTE'].includes(usuario?.rol);
 
     if (ordenConfirmada) {
         return (
@@ -56,7 +60,7 @@ export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesAct
                         <button type="button" className="btn btn-outline-secondary" disabled={procesando}
                             onClick={() => consultarPendiente(consultar)}>Consultar orden</button>
                         <button type="button" className="btn btn-danger ms-2"
-                            disabled={procesando || !envioHabilitado || !sonTemporales}
+                            disabled={procesando || !rolPuedeComprar || !envioHabilitado || !sonTemporales}
                             onClick={() => reintentarCompra(enviar, consultar)}>Reintentar la misma compra</button>
                         {!envioHabilitado && <p className="text-muted mt-2">Envío de órdenes deshabilitado durante la revisión.</p>}
                         {envioHabilitado && !sonTemporales && <p className="text-muted mt-2">
@@ -94,10 +98,10 @@ export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesAct
                 <pre>{JSON.stringify(solicitud, null, 2)}</pre>
             </details>
             <button type="button" className="btn btn-danger"
-                disabled={!envioHabilitado || !sonTemporales || !puedeContinuar || procesando}
+                disabled={!rolPuedeComprar || !envioHabilitado || !sonTemporales || !puedeContinuar || procesando}
                 onClick={() => registrarCompra(solicitud, enviar, consultar)}>Confirmar compra</button>
             <Link className="btn btn-outline-secondary ms-2" to={RUTA_CHECKOUT_CONECTADO}
-                state={{ datosCliente, tipoEntrega }}>Volver al checkout</Link>
+                state={{ datosCliente, tipoEntrega, compradorId: usuario.id }}>Volver al checkout</Link>
         </main>
     );
 }

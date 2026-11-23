@@ -7,7 +7,10 @@ import { obtenerCategorias } from '../services/categoriasService';
 import { obtenerClientes } from '../services/usuariosService';
 
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminPanel() {
+    const baseAdmin = useBaseAdmin();
 
     const productos = obtenerProductos();
     const ordenes = obtenerOrdenes();
@@ -79,7 +82,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/productos"
+                                to={`${baseAdmin}/productos`}
                                 className="btn btn-danger"
                             >
                                 Administrar productos
@@ -119,7 +122,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/categorias"
+                                to={`${baseAdmin}/categorias`}
                                 className="btn btn-outline-secondary"
                             >
                                 Administrar categorías
@@ -159,7 +162,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/ordenes"
+                                to={`${baseAdmin}/ordenes`}
                                 className="btn btn-outline-primary"
                             >
                                 Administrar órdenes
@@ -199,7 +202,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/usuarios"
+                                to={`${baseAdmin}/usuarios`}
                                 className="btn btn-outline-success"
                             >
                                 Administrar usuarios
@@ -239,7 +242,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/notificaciones"
+                                to={`${baseAdmin}/notificaciones`}
                                 className="btn btn-outline-danger"
                             >
                                 Ver notificaciones
@@ -279,7 +282,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/incidencias"
+                                to={`${baseAdmin}/incidencias`}
                                 className="btn btn-outline-warning"
                             >
                                 Administrar incidencias
@@ -315,7 +318,7 @@ export default function AdminPanel() {
                             </p>
 
                             <Link
-                                to="/admin/reportes"
+                                to={`${baseAdmin}/reportes`}
                                 className="btn btn-outline-info"
                             >
                                 Ver reportes

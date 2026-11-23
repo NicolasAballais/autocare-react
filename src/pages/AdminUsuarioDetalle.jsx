@@ -8,7 +8,10 @@ import {
     obtenerOrdenesUsuario
 } from '../services/ordenesService';
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminUsuarioDetalle() {
+    const baseAdmin = useBaseAdmin();
 
     const { id } = useParams();
 
@@ -24,7 +27,7 @@ export default function AdminUsuarioDetalle() {
                 </div>
 
                 <Link
-                    to="/admin/usuarios"
+                    to={`${baseAdmin}/usuarios`}
                     className="btn btn-secondary"
                 >
                     Volver a usuarios
@@ -55,7 +58,7 @@ export default function AdminUsuarioDetalle() {
                 </div>
 
                 <Link
-                    to="/admin/usuarios"
+                    to={`${baseAdmin}/usuarios`}
                     className="btn btn-outline-secondary"
                 >
                     Volver
@@ -129,7 +132,7 @@ export default function AdminUsuarioDetalle() {
                     <div className="mt-3">
 
                         <Link
-                            to={`/admin/usuarios/${usuario.id}/editar`}
+                            to={`${baseAdmin}/usuarios/${usuario.id}/editar`}
                             className="btn btn-outline-primary"
                         >
                             Editar usuario

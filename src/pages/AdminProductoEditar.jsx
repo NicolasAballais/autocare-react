@@ -15,7 +15,10 @@ import {
 } from '../services/categoriasService';
 
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminProductoEditar() {
+    const baseAdmin = useBaseAdmin();
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -68,7 +71,7 @@ export default function AdminProductoEditar() {
                 </div>
 
                 <Link
-                    to="/admin/productos"
+                    to={`${baseAdmin}/productos`}
                     className="btn btn-secondary"
                 >
                     Volver a productos
@@ -194,7 +197,7 @@ export default function AdminProductoEditar() {
 
 
         navigate(
-            '/admin/productos'
+            `${baseAdmin}/productos`
         );
     }
 
@@ -218,7 +221,7 @@ export default function AdminProductoEditar() {
 
 
                 <Link
-                    to="/admin/productos"
+                    to={`${baseAdmin}/productos`}
                     className="btn btn-outline-secondary"
                 >
                     Volver
@@ -469,7 +472,7 @@ export default function AdminProductoEditar() {
                                 type="button"
                                 className="btn btn-outline-secondary"
                                 onClick={() =>
-                                    navigate('/admin/productos')
+                                    navigate(`${baseAdmin}/productos`)
                                 }
                             >
                                 Cancelar

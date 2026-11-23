@@ -1,7 +1,23 @@
 import { useState } from 'react';
 import { obtenerSesion, actualizarUsuarioPerfil } from '../services/usuariosService';
+import { useSesionConectada } from '../context/sesionConectada.js';
 
-export default function Perfil() {
+export default function Perfil({ conectado = false }) {
+    if (conectado) return <PerfilConectado />;
+    return <PerfilLocal />;
+}
+
+function PerfilConectado() {
+    const { usuario } = useSesionConectada();
+    return <main className="container my-5">
+        <h1>Mi perfil conectado</h1>
+        <dl><dt>Nombre</dt><dd>{usuario.nombre}</dd><dt>Correo</dt><dd>{usuario.correo}</dd>
+            <dt>Rol</dt><dd>{usuario.rol}</dd></dl>
+        <p>La edición del perfil conectado se incorporará en una etapa posterior.</p>
+    </main>;
+}
+
+function PerfilLocal() {
 
     const sesion = obtenerSesion();
 
@@ -26,11 +42,11 @@ export default function Perfil() {
         );
     }
 
-    function manejarEnvio(evento) {
+    async function manejarEnvio(evento) {
 
         evento.preventDefault();
 
-        actualizarUsuarioPerfil(
+        await actualizarUsuarioPerfil(
             sesion.id,
             {
                 nombre,

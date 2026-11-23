@@ -3,6 +3,7 @@ import { useCarrito } from '../context/CarritoContext';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO } from '../context/catalogo.js';
 import ImportarCarritoLocal from '../components/ImportarCarritoLocal.jsx';
+import { useSesionConectada } from '../context/sesionConectada.js';
 
 
 export default function Carrito({ conectado = false }) {
@@ -18,6 +19,13 @@ export default function Carrito({ conectado = false }) {
     const carrito = conectado ? revision.lineas : local.carrito;
     const total = conectado ? revision.total : local.total;
     const bloqueado = conectado && Boolean(remoto.intento);
+    const comprador = useSesionConectada().usuario;
+
+    if (conectado && comprador?.rol === 'VENDEDOR') {
+        return <main className="container my-5"><p>El rol VENDEDOR permite consultar productos y órdenes.</p>
+            <Link to={RUTA_CATALOGO_CONECTADO}>Ver productos</Link>
+        </main>;
+    }
 
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -341,7 +349,12 @@ export default function Carrito({ conectado = false }) {
             )}
 
             {conectado && !bloqueado && (
-                <ImportarCarritoLocal carritoLocal={local.carrito} productos={revision.productos} aplicar={remoto.aplicarPropuesta} />
+                <ImportarCarritoLocal key={comprador?.id ?? 'sin-sesion'} carritoLocal={local.carrito}
+                    productos={revision.productos} aplicar={remoto.aplicarPropuesta} />
+            )}
+            {conectado && !bloqueado && comprador && (
+                <ImportarCarritoLocal key={`anonimo-${comprador.id}`} carritoLocal={remoto.carritoSinSesion}
+                    productos={revision.productos} aplicar={remoto.aplicarPropuesta} origen="carrito sin sesión" />
             )}
 
         </main>

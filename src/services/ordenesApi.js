@@ -2,6 +2,7 @@ import { enviarJsonApi, obtenerJsonApi } from './api.js';
 import { obtenerProductosApi } from './catalogoApi.js';
 import { esObjectId, mismoIdProducto, normalizarIdProducto } from './carritoService.js';
 import { modoPruebaOrdenesActivo, PREFIJO_PRODUCTO_TEMPORAL } from './ordenesConfiguracion.js';
+import { cabeceraBearer } from './authApi.js';
 
 export class EnvioOrdenBloqueado extends Error {}
 
@@ -40,7 +41,7 @@ export function sonProductosTemporales(solicitud, catalogo) {
 }
 
 export function crearEnvioOrden({ habilitado = modoPruebaOrdenesActivo() } = {}) {
-    return async function enviar(intento) {
+    return async function enviar(intento, obtenerToken) {
         if (!habilitado) throw new EnvioOrdenBloqueado('El envío de órdenes está deshabilitado en esta etapa.');
         const solicitud = solicitudDelIntento(intento);
         if (!solicitud) throw new EnvioOrdenBloqueado('El intento de compra guardado no es válido.');
@@ -55,18 +56,23 @@ export function crearEnvioOrden({ habilitado = modoPruebaOrdenesActivo() } = {})
             throw new EnvioOrdenBloqueado('La prueba admite únicamente productos temporales con código TEST-.');
         }
         return enviarJsonApi('/ordenes', intento.cuerpo, {
-            estadoEsperado: 201, cabeceras: { 'Idempotency-Key': intento.id }
+            estadoEsperado: 201, cabeceras: { ...cabeceraBearer(obtenerToken?.()), 'Idempotency-Key': intento.id }
         });
     };
 }
 
-export function enviarOrdenApi(intento) {
-    return crearEnvioOrden()(intento);
+export function enviarOrdenApi(intento, obtenerToken) {
+    return crearEnvioOrden()(intento, obtenerToken);
 }
 
-export function obtenerOrdenApi(id) {
+export function obtenerOrdenApi(id, obtenerToken) {
     if (!esObjectId(id)) throw new Error('El identificador de la orden no es válido.');
-    return obtenerJsonApi(`/ordenes/${id}`, { estadoEsperado: 200, cache: 'no-store' });
+    return obtenerJsonApi(`/ordenes/${id}`, { estadoEsperado: 200, cache: 'no-store',
+        cabeceras: cabeceraBearer(obtenerToken?.()) });
+}
+
+export function listarOrdenesApi(obtenerToken) {
+    return obtenerJsonApi('/ordenes', { estadoEsperado: 200, cache: 'no-store', cabeceras: cabeceraBearer(obtenerToken?.()) });
 }
 
 export function mismosProductos(primera, segunda) {

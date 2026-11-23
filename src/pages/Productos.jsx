@@ -20,12 +20,14 @@ import {
     useCarrito
 } from '../context/CarritoContext';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
+import { useSesionConectada } from '../context/sesionConectada';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { mismoIdProducto } from '../services/carritoService.js';
 
 
 export default function Productos() {
     const catalogo = useCatalogoConectado();
+    const vendedor = useSesionConectada().usuario?.rol === 'VENDEDOR';
     const conectado = Boolean(catalogo);
     const rutaProductos = conectado ? RUTA_CATALOGO_CONECTADO : '/productos';
     const productos = conectado ? catalogo.productos : obtenerProductos();
@@ -376,7 +378,7 @@ export default function Productos() {
                                                             </Link>
 
 
-                                                            <button
+                                                            {(!conectado || !vendedor) && <button
                                                                 type="button"
                                                                 className="btn btn-danger"
                                                                 disabled={
@@ -390,7 +392,7 @@ export default function Productos() {
                                                                         precio: precioFinal, descuento })}
                                                             >
                                                                 <i className="bi bi-cart-plus"></i>
-                                                            </button>
+                                                            </button>}
 
                                                         </div>
 

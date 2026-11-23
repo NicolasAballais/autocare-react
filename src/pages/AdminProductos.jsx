@@ -1,7 +1,10 @@
 import { obtenerProductos, guardarProductos } from '../services/productosService';
 import { Link } from 'react-router-dom';
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminProductos() {
+    const baseAdmin = useBaseAdmin();
 
     const productos = obtenerProductos();
 
@@ -46,7 +49,7 @@ export default function AdminProductos() {
                 </div>
 
                 <Link
-                    to="/admin/productos/nuevo"
+                    to={`${baseAdmin}/productos/nuevo`}
                     className="btn btn-danger"
                 >
                     <i className="bi bi-plus-circle me-2"></i>
@@ -167,7 +170,7 @@ export default function AdminProductos() {
                                                 <div className="d-flex justify-content-center gap-2">
 
                                                     <Link
-                                                        to={`/admin/productos/editar/${producto.id}`}
+                                                        to={`${baseAdmin}/productos/editar/${producto.id}`}
                                                         className="btn btn-outline-primary btn-sm"
                                                     >
                                                         Editar

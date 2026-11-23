@@ -7,7 +7,10 @@ import {
 } from '../services/usuariosService';
 
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminUsuarioEditar() {
+    const baseAdmin = useBaseAdmin();
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -36,7 +39,7 @@ export default function AdminUsuarioEditar() {
                 </div>
 
                 <Link
-                    to="/admin/usuarios"
+                    to={`${baseAdmin}/usuarios`}
                     className="btn btn-secondary"
                 >
                     Volver a usuarios
@@ -58,14 +61,14 @@ export default function AdminUsuarioEditar() {
     }
 
 
-    function manejarEnvio(evento) {
+    async function manejarEnvio(evento) {
 
         evento.preventDefault();
 
         setMensajeError('');
 
         const resultado =
-            actualizarUsuarioAdmin(
+            await actualizarUsuarioAdmin(
                 usuario.id,
                 formulario
             );
@@ -80,7 +83,7 @@ export default function AdminUsuarioEditar() {
         }
 
         navigate(
-            `/admin/usuarios/${usuario.id}`
+            `${baseAdmin}/usuarios/${usuario.id}`
         );
     }
 
@@ -103,7 +106,7 @@ export default function AdminUsuarioEditar() {
                 </div>
 
                 <Link
-                    to={`/admin/usuarios/${usuario.id}`}
+                    to={`${baseAdmin}/usuarios/${usuario.id}`}
                     className="btn btn-outline-secondary"
                 >
                     Volver

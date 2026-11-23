@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
+import { RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
 
 
 export default function Footer() {
+    const conectado = useMatch(`${RUTA_CATALOGO_CONECTADO}/*`);
 
     return (
 
@@ -101,7 +103,7 @@ export default function Footer() {
             </p>
 
 
-            <div className="mt-2">
+            {!conectado && <div className="mt-2">
 
                 <Link
                     to="/admin"
@@ -110,7 +112,7 @@ export default function Footer() {
                     Ingreso Administrador
                 </Link>
 
-            </div>
+            </div>}
 
         </footer>
 

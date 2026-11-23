@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { obtenerProductos } from '../services/productosService';
 
+import { useBaseAdmin } from '../context/catalogo';
+
 export default function AdminNotificaciones() {
+    const baseAdmin = useBaseAdmin();
 
     const productos = obtenerProductos();
 
@@ -85,7 +88,7 @@ export default function AdminNotificaciones() {
                                         </div>
 
                                         <Link
-                                            to={`/admin/productos/editar/${producto.id}`}
+                                            to={`${baseAdmin}/productos/editar/${producto.id}`}
                                             className="btn btn-outline-danger btn-sm"
                                         >
                                             Editar producto
