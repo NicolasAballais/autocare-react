@@ -13,8 +13,8 @@ export async function obtenerJsonApi(ruta, { urlBase = URL_BASE_API, estadoEsper
     return solicitarJsonApi(ruta, { urlBase, method: 'GET', estadoEsperado, cache, cabeceras });
 }
 
-export async function enviarJsonApi(ruta, cuerpo, { urlBase = URL_BASE_API, estadoEsperado, cabeceras } = {}) {
-    return solicitarJsonApi(ruta, { urlBase, method: 'POST', cuerpo, estadoEsperado, cabeceras });
+export async function enviarJsonApi(ruta, cuerpo, { urlBase = URL_BASE_API, estadoEsperado, cabeceras, method = 'POST' } = {}) {
+    return solicitarJsonApi(ruta, { urlBase, method, cuerpo, estadoEsperado, cabeceras });
 }
 
 async function solicitarJsonApi(ruta, { urlBase, method, cuerpo, estadoEsperado, cabeceras, cache }) {
@@ -22,7 +22,7 @@ async function solicitarJsonApi(ruta, { urlBase, method, cuerpo, estadoEsperado,
     const headers = { Accept: 'application/json, application/problem+json', ...cabeceras };
     const opciones = { method, headers };
     if (cache) opciones.cache = cache;
-    if (method === 'POST') {
+    if (cuerpo !== undefined) {
         headers['Content-Type'] = 'application/json';
         opciones.body = cuerpo;
     }

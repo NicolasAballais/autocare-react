@@ -55,6 +55,7 @@ import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, 
     RUTA_REGISTRO_CONECTADO } from './context/catalogo';
 
 const ROLES_COMPRA = ['ADMIN', 'CLIENTE'];
+const PAGINAS_CATALOGO_ADMIN = [AdminPanel, AdminProductos, AdminProductoNuevo, AdminProductoEditar, AdminCategorias];
 const PAGINAS_ADMIN = [
     ['', AdminPanel], ['/productos', AdminProductos], ['/productos/nuevo', AdminProductoNuevo],
     ['/productos/editar/:id', AdminProductoEditar], ['/ordenes', AdminOrdenes],
@@ -122,15 +123,16 @@ function App() {
                     {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
                         <Route key={ruta} path={`/admin${ruta}`} element={<RutaAdmin><Pagina /></RutaAdmin>} />
                     ))}
-                    <Route element={<RutaConectada roles={['ADMIN']} />}>
+                    <Route element={<RutaConectada roles={['ADMIN']} porUsuario />}>
                         {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
-                            <Route key={ruta} path={`${RUTA_ADMIN_CONECTADA}${ruta}`} element={<>
+                            <Route key={ruta} path={`${RUTA_ADMIN_CONECTADA}${ruta}`}
+                                element={PAGINAS_CATALOGO_ADMIN.includes(Pagina) ? <Pagina conectado /> : <>
                                 <p className="alert alert-info m-3">
                                     Panel de demostración con datos locales.{' '}
                                     <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes de Spring Boot</Link>
                                 </p>
                                 <Pagina />
-                            </>} />
+                                </>} />
                         ))}
                     </Route>
                     <Route path="/perfil" element={<Perfil />} />

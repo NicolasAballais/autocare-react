@@ -7,19 +7,25 @@ import { obtenerCategorias } from '../services/categoriasService';
 import { obtenerClientes } from '../services/usuariosService';
 
 
-import { useBaseAdmin } from '../context/catalogo';
+import { RUTA_ORDENES_CONECTADAS, useBaseAdmin } from '../context/catalogo.js';
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
+import { listarCategoriasAdmin, listarProductosAdmin } from '../services/adminCatalogoApi.js';
 
-export default function AdminPanel() {
+export default function AdminPanel({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
 
-    const productos = obtenerProductos();
+    const productosApi = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
+    const categoriasApi = useConsultaCatalogoAdmin(conectado, listarCategoriasAdmin);
+    const productosLocales = obtenerProductos();
+    const productos = conectado ? productosApi.datos : productosLocales;
     const ordenes = obtenerOrdenes();
     const incidencias = obtenerIncidencias();
-    const categorias = obtenerCategorias();
+    const categorias = conectado ? categoriasApi.datos : obtenerCategorias();
     const clientes = obtenerClientes();
 
 
-    const productosStockCritico = productos.filter(
+    const productosStockCritico = productosLocales.filter(
         (producto) =>
             producto.stock <= producto.stockCritico
     );
@@ -68,7 +74,7 @@ export default function AdminPanel() {
                                 <i className="bi bi-box-seam fs-2 text-danger"></i>
 
                                 <span className="badge text-bg-secondary">
-                                    {productos.length}
+                                    {productos?.length ?? '—'}
                                 </span>
 
                             </div>
@@ -76,6 +82,7 @@ export default function AdminPanel() {
                             <h4>
                                 Productos
                             </h4>
+                            <EstadoCatalogoAdmin consulta={productosApi} />
 
                             <p className="text-muted">
                                 Crear, editar, eliminar y controlar el stock.
@@ -108,7 +115,7 @@ export default function AdminPanel() {
                                 <i className="bi bi-grid fs-2 text-secondary"></i>
 
                                 <span className="badge text-bg-secondary">
-                                    {categorias.length}
+                                    {categorias?.length ?? '—'}
                                 </span>
 
                             </div>
@@ -116,6 +123,7 @@ export default function AdminPanel() {
                             <h4>
                                 Categorías
                             </h4>
+                            <EstadoCatalogoAdmin consulta={categoriasApi} />
 
                             <p className="text-muted">
                                 Crear, editar y organizar categorías.
@@ -154,7 +162,7 @@ export default function AdminPanel() {
                             </div>
 
                             <h4>
-                                Órdenes
+                                Órdenes {conectado && <small className="text-muted">· Simulación local</small>}
                             </h4>
 
                             <p className="text-muted">
@@ -167,6 +175,7 @@ export default function AdminPanel() {
                             >
                                 Administrar órdenes
                             </Link>
+                            {conectado && <Link className="d-block mt-2" to={RUTA_ORDENES_CONECTADAS}>Ver órdenes conectadas</Link>}
 
                         </div>
 
@@ -194,7 +203,7 @@ export default function AdminPanel() {
                             </div>
 
                             <h4>
-                                Usuarios
+                                Usuarios {conectado && <small className="text-muted">· Simulación local</small>}
                             </h4>
 
                             <p className="text-muted">
@@ -234,7 +243,7 @@ export default function AdminPanel() {
                             </div>
 
                             <h4>
-                                Notificaciones
+                                Notificaciones {conectado && <small className="text-muted">· Simulación local</small>}
                             </h4>
 
                             <p className="text-muted">
@@ -274,7 +283,7 @@ export default function AdminPanel() {
                             </div>
 
                             <h4>
-                                Incidencias
+                                Incidencias {conectado && <small className="text-muted">· Simulación local</small>}
                             </h4>
 
                             <p className="text-muted">
@@ -310,7 +319,7 @@ export default function AdminPanel() {
                             </div>
 
                             <h4>
-                                Reportes
+                                Reportes {conectado && <small className="text-muted">· Simulación local</small>}
                             </h4>
 
                             <p className="text-muted">

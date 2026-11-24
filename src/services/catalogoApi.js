@@ -7,3 +7,11 @@ export function obtenerProductosApi(opciones) {
 export function obtenerCategoriasApi(opciones) {
     return obtenerJsonApi('/categorias', opciones);
 }
+
+export function obtenerProductoApi(id, opciones) {
+    return obtenerJsonApi(`/productos/${encodeURIComponent(id)}`, opciones);
+}
+
+export function obtenerCategoriaApi(id, opciones) {
+    return obtenerJsonApi(`/categorias/${encodeURIComponent(id)}`, opciones);
+}
