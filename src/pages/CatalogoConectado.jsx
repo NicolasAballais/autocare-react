@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { useSesionConectada } from '../context/sesionConectada';
 import { obtenerCategoriasApi, obtenerProductosApi } from '../services/catalogoApi';
 
 export default function CatalogoConectado() {
+    const vendedor = useSesionConectada().usuario?.rol === 'VENDEDOR';
     const [catalogo, setCatalogo] = useState(null);
     const [error, setError] = useState('');
     const [intento, setIntento] = useState(0);
@@ -42,11 +44,11 @@ export default function CatalogoConectado() {
                 <div className="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
                     <div>
                         <strong>Catálogo conectado</strong>
-                        <div>Agrega productos y revisa tu compra conectada.</div>
+                        {!vendedor && <div>Agrega productos y revisa tu compra conectada.</div>}
                     </div>
-                    <Link className="btn btn-outline-secondary btn-sm" to="/productos">
+                    {!vendedor && <Link className="btn btn-outline-secondary btn-sm" to="/productos">
                         Volver al catálogo local
-                    </Link>
+                    </Link>}
                 </div>
 
                 {error && (

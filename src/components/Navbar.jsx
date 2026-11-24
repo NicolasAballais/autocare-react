@@ -16,11 +16,12 @@ export default function Navbar() {
     const vendedor = conectado && sesion?.rol === 'VENDEDOR';
     const { cantidadTotal } = useCarrito();
     const remoto = useCarritoConectado();
+    const identidad = <><i className="bi bi-person-circle fs-4 me-1"></i>{sesion?.nombre}</>;
 
     function manejarCerrarSesion() {
         if (conectado) {
             sesionConectada.cerrarSesion();
-            navigate(RUTA_CATALOGO_CONECTADO, { replace: true });
+            navigate(vendedor ? RUTA_LOGIN_CONECTADO : RUTA_CATALOGO_CONECTADO, { replace: true });
             return;
         }
         cerrarSesion();
@@ -33,7 +34,7 @@ export default function Navbar() {
             <div className="container">
 
                 <Link
-                    to="/"
+                    to={vendedor ? RUTA_CATALOGO_CONECTADO : '/'}
                     className="navbar-brand fw-bold"
                 >
                     AutoCare<span className="text-danger">Pro</span>
@@ -58,11 +59,11 @@ export default function Navbar() {
 
                     <ul className="navbar-nav">
 
-                        <li className="nav-item">
+                        {!vendedor && <li className="nav-item">
                             <Link className="nav-link" to="/">
                                 Inicio
                             </Link>
-                        </li>
+                        </li>}
 
                         <li className="nav-item">
                             <Link className="nav-link" to={conectado ? RUTA_CATALOGO_CONECTADO : '/productos'}>
@@ -70,20 +71,22 @@ export default function Navbar() {
                             </Link>
                         </li>
 
-                        <li className="nav-item">
-                            <Link className="nav-link" to={conectado ? `${RUTA_CATALOGO_CONECTADO}/categorias` : '/categorias'}>
-                                Categorías
-                            </Link>
-                        </li>
+                        {!vendedor && <>
+                            <li className="nav-item">
+                                <Link className="nav-link" to={conectado ? `${RUTA_CATALOGO_CONECTADO}/categorias` : '/categorias'}>
+                                    Categorías
+                                </Link>
+                            </li>
 
-                        <li className="nav-item">
-                            <Link
-                                className="nav-link"
-                                to={conectado ? `${RUTA_CATALOGO_CONECTADO}/ofertas` : '/ofertas'}
-                            >
-                                Ofertas
-                            </Link>
-                        </li>
+                            <li className="nav-item">
+                                <Link
+                                    className="nav-link"
+                                    to={conectado ? `${RUTA_CATALOGO_CONECTADO}/ofertas` : '/ofertas'}
+                                >
+                                    Ofertas
+                                </Link>
+                            </li>
+                        </>}
 
                         <li className="nav-item">
                             <Link
@@ -120,23 +123,25 @@ export default function Navbar() {
 
                         )}
 
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/nosotros">
-                                Nosotros
-                            </Link>
-                        </li>
+                        {!vendedor && <>
+                            <li className="nav-item">
+                                <Link className="nav-link" to="/nosotros">
+                                    Nosotros
+                                </Link>
+                            </li>
 
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/blog">
-                                Blog
-                            </Link>
-                        </li>
+                            <li className="nav-item">
+                                <Link className="nav-link" to="/blog">
+                                    Blog
+                                </Link>
+                            </li>
 
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/contacto">
-                                Contacto
-                            </Link>
-                        </li>
+                            <li className="nav-item">
+                                <Link className="nav-link" to="/contacto">
+                                    Contacto
+                                </Link>
+                            </li>
+                        </>}
 
                     </ul>
 
@@ -144,13 +149,11 @@ export default function Navbar() {
 
                         <div className="d-flex align-items-center gap-2 ms-auto">
 
-                            <Link
-                                to={conectado ? RUTA_PERFIL_CONECTADO : '/perfil'}
-                                className="text-white text-decoration-none"
-                            >
-                                <i className="bi bi-person-circle fs-4 me-1"></i>
-                                {sesion.nombre}
-                            </Link>
+                            {vendedor ? <span className="text-white">{identidad}</span> : (
+                                <Link to={conectado ? RUTA_PERFIL_CONECTADO : '/perfil'} className="text-white text-decoration-none">
+                                    {identidad}
+                                </Link>
+                            )}
 
                             <button
                                 type="button"

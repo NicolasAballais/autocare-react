@@ -1,9 +1,12 @@
 import { Link, useMatch } from 'react-router-dom';
 import { RUTA_CATALOGO_CONECTADO } from '../context/catalogo';
+import { useSesionConectada } from '../context/sesionConectada';
 
 
 export default function Footer() {
     const conectado = useMatch(`${RUTA_CATALOGO_CONECTADO}/*`);
+    const { usuario } = useSesionConectada();
+    const vendedor = conectado && usuario?.rol === 'VENDEDOR';
 
     return (
 
@@ -33,7 +36,7 @@ export default function Footer() {
                     </div>
 
 
-                    <div className="col-md-5 col-lg-4">
+                    {!vendedor && <div className="col-md-5 col-lg-4">
 
                         <h3>
                             Redes Sociales
@@ -88,7 +91,7 @@ export default function Footer() {
 
                         </div>
 
-                    </div>
+                    </div>}
 
                 </div>
 

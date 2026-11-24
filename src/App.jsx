@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-import './App.css';
-
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 import RutaAdmin from './components/RutaAdmin';
@@ -54,7 +52,7 @@ import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, 
     RUTA_COMPRA_CONECTADA, RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO,
     RUTA_REGISTRO_CONECTADO } from './context/catalogo';
 
-const ROLES_COMPRA = ['ADMIN', 'CLIENTE'];
+const ROLES_TIENDA = ['ADMIN', 'CLIENTE'];
 const PAGINAS_CATALOGO_ADMIN = [AdminPanel, AdminProductos, AdminProductoNuevo, AdminProductoEditar, AdminCategorias];
 const PAGINAS_ADMIN = [
     ['', AdminPanel], ['/productos', AdminProductos], ['/productos/nuevo', AdminProductoNuevo],
@@ -84,27 +82,31 @@ function App() {
                     <Route path="/contacto" element={<Contacto />} />
                     <Route path="/productos/:id" element={<DetalleProducto />} />
 
-                    <Route path={RUTA_LOGIN_CONECTADO} element={<Login conectado />} />
-                    <Route path={RUTA_REGISTRO_CONECTADO} element={<Register conectado />} />
+                    <Route element={<RutaConectada roles={ROLES_TIENDA} publica />}>
+                        <Route path={RUTA_LOGIN_CONECTADO} element={<Login conectado />} />
+                        <Route path={RUTA_REGISTRO_CONECTADO} element={<Register conectado />} />
+                    </Route>
+                    <Route path={RUTA_PERFIL_CONECTADO}
+                        element={<RutaConectada roles={ROLES_TIENDA}><Perfil conectado /></RutaConectada>} />
                     <Route element={<RutaConectada />}>
-                        <Route path={RUTA_PERFIL_CONECTADO} element={<Perfil conectado />} />
                         <Route path={RUTA_ORDENES_CONECTADAS} element={<OrdenesConectadas />} />
                         <Route path={`${RUTA_ORDENES_CONECTADAS}/:id`} element={<OrdenesConectadas />} />
                     </Route>
 
                     <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>
                         <Route index element={<Productos />} />
-                        <Route path="categorias" element={<Categorias />} />
-                        <Route path="ofertas" element={<Ofertas />} />
+                        <Route path="categorias" element={<RutaConectada roles={ROLES_TIENDA} publica><Categorias /></RutaConectada>} />
+                        <Route path="ofertas" element={<RutaConectada roles={ROLES_TIENDA} publica><Ofertas /></RutaConectada>} />
                         <Route path=":id" element={<DetalleProducto />} />
                     </Route>
 
                     <Route element={<RevisionCarritoConectado />}>
-                        <Route path={RUTA_CARRITO_CONECTADO} element={<Carrito conectado />} />
+                        <Route path={RUTA_CARRITO_CONECTADO}
+                            element={<RutaConectada roles={ROLES_TIENDA} publica><Carrito conectado /></RutaConectada>} />
                         <Route path={RUTA_CHECKOUT_CONECTADO}
-                            element={<RutaConectada roles={ROLES_COMPRA} porUsuario><Checkout conectado /></RutaConectada>} />
+                            element={<RutaConectada roles={ROLES_TIENDA} porUsuario><Checkout conectado /></RutaConectada>} />
                         <Route path={RUTA_COMPRA_CONECTADA}
-                            element={<RutaConectada roles={ROLES_COMPRA} porUsuario><CompraConectada /></RutaConectada>} />
+                            element={<RutaConectada roles={ROLES_TIENDA} porUsuario><CompraConectada /></RutaConectada>} />
                     </Route>
 
                     <Route path="/carrito" element={<Carrito />} />
