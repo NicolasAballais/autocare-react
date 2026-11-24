@@ -67,7 +67,7 @@ export default function AdminProductos({ conectado = false, cliente = adminCatal
                 <i className="bi bi-plus-circle me-2"></i>Nuevo producto
             </Link> : <button type="button" className="btn btn-danger" disabled>Nuevo producto</button>}
         </div>
-        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} />}
+        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} soloTemporales={cliente.soloTemporales} />}
         {aviso && <p role="status" className="alert alert-success">{aviso}</p>}
         {error && <p role="alert" className="alert alert-danger">{error}</p>}
         <EstadoCatalogoAdmin consulta={consulta} />

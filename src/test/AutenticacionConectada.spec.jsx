@@ -20,6 +20,8 @@ const USUARIO = { id: '6400000000000000000000a1', nombre: 'Ana Prueba', correo: 
 const TOKEN = 'token-simulado';
 const CLAVE_LOCAL = 'sesionAutoCare';
 const CONTRASENA = 'ClaveSimulada1';
+const DATOS_REGISTRO = { Nombre: 'Ana', Apellido: 'Prueba', 'Correo electrónico': USUARIO.correo,
+    Contraseña: 'Clave123', 'Confirmar contraseña': 'Clave123' };
 const clienteAuth = crearClienteAuth({ habilitado: true });
 const json = (datos, status = 200) => Response.json(datos, { status });
 
@@ -46,6 +48,8 @@ function montar(ruta, habilitado = true) {
                 <CarritoProvider>
                     <Navbar />
                     <Routes>
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/login" element={<Login />} />
                         <Route path={RUTA_LOGIN_CONECTADO} element={<Login conectado />} />
                         <Route path={RUTA_REGISTRO_CONECTADO} element={<Register conectado />} />
                         <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>
@@ -81,6 +85,67 @@ function ingresar() {
 describe('Autenticación conectada', () => {
     beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
     afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); });
+
+    for (const [modo, ruta, longitud] of [['local', '/register', 4], ['conectado', RUTA_REGISTRO_CONECTADO, 8]]) {
+        it(`bloquea el registro ${modo} con campos vacíos o correo inválido`, () => {
+            const fetchSimulado = spyOn(window, 'fetch');
+            montar(ruta);
+            const enviar = screen.getByRole('button', { name: 'Crear cuenta' });
+            const nombre = screen.getByLabelText('Nombre');
+            expect(nombre.validity.valueMissing).toBeTrue();
+            fireEvent.click(enviar);
+            expect(screen.getByRole('button', { name: 'Crear cuenta' })).toBeTruthy();
+
+            escribir({ ...DATOS_REGISTRO, 'Correo electrónico': 'correo-invalido' });
+            expect(screen.getByLabelText('Correo electrónico').validity.typeMismatch).toBeTrue();
+            fireEvent.click(enviar);
+            expect(screen.getByRole('button', { name: 'Crear cuenta' })).toBeTruthy();
+            expect(localStorage.getItem('usuariosAutoCare')).toBeNull();
+            expect(fetchSimulado).not.toHaveBeenCalled();
+        });
+
+        it(`muestra la longitud mínima y la confirmación de contraseña en registro ${modo}`, () => {
+            const fetchSimulado = spyOn(window, 'fetch');
+            montar(ruta);
+            escribir({ ...DATOS_REGISTRO, Contraseña: 'abc', 'Confirmar contraseña': 'abc' });
+            // Dispara el controlador para probar su validación además de la nativa.
+            const formulario = screen.getByRole('button', { name: 'Crear cuenta' }).form;
+            fireEvent.submit(formulario);
+            expect(screen.getByRole('alert').textContent).toContain(`entre ${longitud} y`);
+
+            escribir({ ...DATOS_REGISTRO, Contraseña: '        ', 'Confirmar contraseña': '        ' });
+            fireEvent.submit(formulario);
+            expect(screen.getByRole('alert').textContent).toContain(`entre ${longitud} y`);
+
+            escribir({ ...DATOS_REGISTRO, 'Confirmar contraseña': 'Clave456' });
+            fireEvent.submit(formulario);
+            expect(screen.getByRole('alert').textContent).toContain('Las contraseñas no coinciden');
+            expect(localStorage.getItem('usuariosAutoCare')).toBeNull();
+            expect(fetchSimulado).not.toHaveBeenCalled();
+        });
+    }
+
+    it('rechaza el correo local duplicado aunque cambie el uso de mayúsculas', async () => {
+        const guardados = JSON.stringify([{ id: 1, correo: USUARIO.correo }]);
+        localStorage.setItem('usuariosAutoCare', guardados);
+        const fetchSimulado = spyOn(window, 'fetch');
+        montar('/register');
+        escribir({ ...DATOS_REGISTRO, 'Correo electrónico': USUARIO.correo.toUpperCase() });
+        fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+        expect((await screen.findByRole('alert')).textContent).toMatch(/ya existe.*correo/i);
+        expect(localStorage.getItem('usuariosAutoCare')).toBe(guardados);
+        expect(fetchSimulado).not.toHaveBeenCalled();
+    });
+
+    it('informa el 409 de correo duplicado en el registro conectado', async () => {
+        const fetchSimulado = spyOn(window, 'fetch').and.resolveTo(json({}, 409));
+        montar(RUTA_REGISTRO_CONECTADO);
+        escribir(DATOS_REGISTRO);
+        fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+        expect((await screen.findByRole('alert')).textContent).toContain('Ya existe una cuenta con ese correo');
+        expect(fetchSimulado).toHaveBeenCalledOnceWith('/api/v1/auth/registro', jasmine.objectContaining({ method: 'POST' }));
+        expect(sessionStorage.getItem(CLAVE_SESION_CONECTADA)).toBeNull();
+    });
 
     it('registra un CLIENTE y envía únicamente los campos del DTO', async () => {
         const fetchSimulado = spyOn(window, 'fetch').and.resolveTo(json(USUARIO, 201));

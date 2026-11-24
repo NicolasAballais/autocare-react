@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorApi } from '../services/api.js';
-import { authApi, validarIdentidad } from '../services/authApi.js';
+import { authApi, crearClienteAuth, validarIdentidad } from '../services/authApi.js';
 import { pruebaAuthActiva } from '../services/authConfiguracion.js';
+import { consultarConfiguracionRailway, MODO_RAILWAY } from '../services/configuracionRailway.js';
 import { CLAVE_SESION_CONECTADA, SesionConectadaContext } from './sesionConectada.js';
 
 function leerSesion() {
@@ -13,10 +14,14 @@ function leerSesion() {
     }
 }
 
-export default function SesionConectadaProvider({ children, api = authApi, habilitado = pruebaAuthActiva() }) {
+const clienteRailway = crearClienteAuth({ habilitado: true });
+
+export default function SesionConectadaProvider({ children, demostracion = MODO_RAILWAY,
+    api = demostracion ? clienteRailway : authApi, habilitado = demostracion || pruebaAuthActiva() }) {
     const [sesion, setSesion] = useState(leerSesion);
     const [usuario, setUsuario] = useState(null);
     const [error, setError] = useState('');
+    const [configuracion, setConfiguracion] = useState(null);
     const actual = useRef(sesion);
     const usuarioActual = useRef(null);
     const version = useRef(0);
@@ -59,6 +64,17 @@ export default function SesionConectadaProvider({ children, api = authApi, habil
     }, [cerrarSesion, consultarIdentidad]);
 
     useEffect(() => { restaurarSesion(); }, [restaurarSesion]);
+
+    useEffect(() => {
+        if (!demostracion) return;
+        let vigente = true;
+        consultarConfiguracionRailway().then((datos) => {
+            if (vigente) setConfiguracion(datos);
+        }).catch(() => {
+            if (vigente) setConfiguracion(null);
+        });
+        return () => { vigente = false; };
+    }, [demostracion]);
 
     useEffect(() => {
         if (!sesion) return;
@@ -116,8 +132,15 @@ export default function SesionConectadaProvider({ children, api = authApi, habil
     }, [cerrarSesion]);
 
     const estado = usuario ? 'autenticada' : sesion ? (error ? 'error' : 'verificando') : 'anonima';
-    return <SesionConectadaContext.Provider value={{ usuario, estado, error, habilitado, iniciarSesion,
-        registrar: api.registrar, cerrarSesion, restaurarSesion, solicitar }}>
+    const registroHabilitado = habilitado && (!demostracion || configuracion?.registro === true);
+    const escriturasHabilitadas = demostracion && configuracion?.escrituras === true;
+    async function registrar(datos) {
+        if (!registroHabilitado) throw new Error('El registro conectado está deshabilitado.');
+        return api.registrar(datos);
+    }
+
+    return <SesionConectadaContext.Provider value={{ usuario, estado, error, habilitado, iniciarSesion, demostracion,
+        registroHabilitado, escriturasHabilitadas, registrar, cerrarSesion, restaurarSesion, solicitar }}>
         {children}
     </SesionConectadaContext.Provider>;
 }

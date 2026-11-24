@@ -11,18 +11,20 @@ import { RUTA_ORDENES_CONECTADAS, useBaseAdmin } from '../context/catalogo.js';
 import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
 import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
 import { listarCategoriasAdmin, listarProductosAdmin } from '../services/adminCatalogoApi.js';
+import { useSesionConectada } from '../context/sesionConectada.js';
 
 export default function AdminPanel({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
+    const { demostracion } = useSesionConectada();
 
     const productosApi = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
     const categoriasApi = useConsultaCatalogoAdmin(conectado, listarCategoriasAdmin);
-    const productosLocales = obtenerProductos();
+    const productosLocales = demostracion ? [] : obtenerProductos();
     const productos = conectado ? productosApi.datos : productosLocales;
-    const ordenes = obtenerOrdenes();
-    const incidencias = obtenerIncidencias();
+    const ordenes = demostracion ? [] : obtenerOrdenes();
+    const incidencias = demostracion ? [] : obtenerIncidencias();
     const categorias = conectado ? categoriasApi.datos : obtenerCategorias();
-    const clientes = obtenerClientes();
+    const clientes = demostracion ? [] : obtenerClientes();
 
 
     const productosStockCritico = productosLocales.filter(
@@ -55,6 +57,7 @@ export default function AdminPanel({ conectado = false }) {
                 <p className="text-muted">
                     Gestión general de AutoCarePro
                 </p>
+                {demostracion && <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes conectadas</Link>}
 
             </div>
 
@@ -143,6 +146,7 @@ export default function AdminPanel({ conectado = false }) {
                 </div>
 
 
+                {!demostracion && <>
                 {/* ÓRDENES */}
 
                 <div className="col-md-6 col-lg-3">
@@ -339,6 +343,7 @@ export default function AdminPanel({ conectado = false }) {
 
                 </div>
 
+                </>}
             </div>
 
         </main>

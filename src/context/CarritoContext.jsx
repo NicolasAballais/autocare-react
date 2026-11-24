@@ -42,7 +42,7 @@ export function CarritoProvider({ children }) {
     }, [carrito]);
 
     const agregarProducto = (producto) => {
-        if (!esIdProductoLocal(producto.id)) return;
+        if (!esIdProductoLocal(producto.id) || !Number.isSafeInteger(producto.stock) || producto.stock < 1) return;
 
         setCarrito((carritoActual) => {
 
@@ -61,12 +61,13 @@ export function CarritoProvider({ children }) {
 
                     const nuevaCantidad =
                         Math.min(
-                            Number(item.cantidad) + 1,
+                            (Number.isSafeInteger(item.cantidad) && item.cantidad > 0 ? item.cantidad : 0) + 1,
                             producto.stock
                         );
 
                     return {
                         ...item,
+                        stock: producto.stock,
                         cantidad: nuevaCantidad
                     };
                 });
@@ -91,22 +92,16 @@ export function CarritoProvider({ children }) {
     };
 
     const cambiarCantidad = (id, cantidad) => {
+        if (!Number.isSafeInteger(cantidad) || cantidad < 1) return;
 
         setCarrito((carritoActual) =>
             carritoActual.map((item) => {
 
-                if (!mismoIdProducto(item.id, id)) {
+                if (!mismoIdProducto(item.id, id) || !Number.isSafeInteger(item.stock) || item.stock < 1) {
                     return item;
                 }
 
-                const cantidadValida =
-                    Math.max(
-                        1,
-                        Math.min(
-                            cantidad,
-                            item.stock
-                        )
-                    );
+                const cantidadValida = Math.min(cantidad, item.stock);
 
                 return {
                     ...item,

@@ -1,0 +1,15 @@
+:{$PORT:3000} {
+    handle /healthz {
+        respond "ok" 200
+    }
+
+    handle /api/v1/* {
+        reverse_proxy {$API_INTERNA}
+    }
+
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+}

@@ -66,7 +66,7 @@ export default function FormularioAdminProducto({ conectado = false, id, cliente
     return <main className="container my-5">
         <h1 className="mb-1">{id ? 'Editar producto' : 'Nuevo producto'}</h1>
         <Link className="btn btn-outline-secondary my-3" to={`${baseAdmin}/productos`}>Volver a productos</Link>
-        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} />}
+        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} soloTemporales={cliente.soloTemporales} />}
         <EstadoCatalogoAdmin consulta={categoriasApi} />
         <EstadoCatalogoAdmin consulta={detalleApi} />
         {!conectado && id && !producto && <p role="alert" className="alert alert-danger">Producto no encontrado.</p>}
@@ -87,7 +87,8 @@ function CamposProducto({ producto, categorias, conectado, cliente, baseAdmin })
     }));
     const puedeGuardar = !conectado || (usuario?.rol === 'ADMIN' && cliente.habilitada &&
         (!producto || cliente.puedeEditar('productos', producto)));
-    const opciones = conectado && puedeGuardar ? categorias.filter((item) => esRegistroTemporal('categorias', item)) : categorias;
+    const opciones = conectado && puedeGuardar && cliente.soloTemporales
+        ? categorias.filter((item) => esRegistroTemporal('categorias', item)) : categorias;
     const campoCategoria = conectado ? 'categoriaId' : 'categoria';
 
     function cambiar(evento) {
@@ -138,9 +139,10 @@ function CamposProducto({ producto, categorias, conectado, cliente, baseAdmin })
     }
 
     return <div className="card shadow-sm"><div className="card-body">
-        {conectado && cliente.habilitada && producto && !puedeGuardar &&
+        {conectado && cliente.soloTemporales && cliente.habilitada && producto && !puedeGuardar &&
             <p>Este producto está disponible para consulta. La edición requiere un ID temporal autorizado.</p>}
-        {conectado && puedeGuardar && !opciones.length && <p>Crea una categoría TEST- antes de guardar este producto.</p>}
+        {conectado && puedeGuardar && !opciones.length &&
+            <p>{cliente.soloTemporales ? 'Crea una categoría TEST- antes de guardar este producto.' : 'Crea una categoría antes de guardar este producto.'}</p>}
         <ErroresFormularioAdmin error={error} etiquetas={etiquetas} />
         <form onSubmit={guardar} noValidate>
             <fieldset disabled={!puedeGuardar || guardando}>

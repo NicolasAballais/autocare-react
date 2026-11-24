@@ -23,6 +23,10 @@ export default function Login({ conectado = false }) {
         setMensaje('');
 
         if (procesando) return;
+        if (!correo.trim() || !password.trim()) {
+            setMensaje('Ingresa tu correo y contraseña.');
+            return;
+        }
         if (conectado) {
             if (!sesion.habilitado) return;
             setProcesando(true);

@@ -89,7 +89,7 @@ export default function AdminCategorias({ conectado = false, cliente = adminCata
             <h1 className="mb-1">Administración de Categorías</h1>
             <p className="text-muted">Crear, editar y eliminar categorías de productos.</p>
         </div>
-        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} />}
+        {conectado && <AvisoEscriturasAdmin habilitada={cliente.habilitada} soloTemporales={cliente.soloTemporales} />}
         <div className="row g-4">
             <div className="col-lg-4"><div className="card shadow-sm"><div className="card-body">
                 <h2 className="h4 mb-3">{editando ? 'Editar categoría' : 'Nueva categoría'}</h2>

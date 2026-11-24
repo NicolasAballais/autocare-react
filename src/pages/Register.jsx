@@ -10,6 +10,7 @@ export default function Register({ conectado = false }) {
     const navigate = useNavigate();
     const { state } = useLocation();
     const sesion = useSesionConectada();
+    const registroHabilitado = sesion.registroHabilitado ?? sesion.habilitado;
 
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
@@ -76,7 +77,7 @@ export default function Register({ conectado = false }) {
 
 
         if (
-            password.length < minimo ||
+            !password.trim() || password.length < minimo ||
             password.length > maximo || (conectado && new TextEncoder().encode(password).length > 72)
         ) {
 
@@ -99,7 +100,7 @@ export default function Register({ conectado = false }) {
 
 
         if (conectado) {
-            if (!sesion.habilitado) return;
+            if (!registroHabilitado) return;
             const nombreCompleto = `${nombreLimpio} ${apellidoLimpio}`;
             if (nombreCompleto.length > 100) {
                 setMensaje('El nombre completo no puede superar los 100 caracteres.');
@@ -170,7 +171,7 @@ export default function Register({ conectado = false }) {
 
                             )}
 
-                            {conectado && !sesion.habilitado && <p className="alert alert-info">La prueba de autenticación conectada está deshabilitada.</p>}
+                            {conectado && !registroHabilitado && <p className="alert alert-info">El registro conectado está deshabilitado.</p>}
 
 
                             <form onSubmit={manejarRegistro}>
@@ -310,7 +311,7 @@ export default function Register({ conectado = false }) {
                                 <button
                                     type="submit"
                                     className="btn btn-danger w-100"
-                                    disabled={procesando || (conectado && !sesion.habilitado)}
+                                    disabled={procesando || (conectado && !registroHabilitado)}
                                 >
                                     Crear cuenta
                                 </button>

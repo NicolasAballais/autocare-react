@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
@@ -52,6 +53,9 @@ import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, 
     RUTA_COMPRA_CONECTADA, RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO,
     RUTA_REGISTRO_CONECTADO } from './context/catalogo';
 
+import { useSesionConectada } from './context/sesionConectada.js';
+import { crearAdminCatalogoApi } from './services/adminCatalogoApi.js';
+
 const ROLES_TIENDA = ['ADMIN', 'CLIENTE'];
 const PAGINAS_CATALOGO_ADMIN = [AdminPanel, AdminProductos, AdminProductoNuevo, AdminProductoEditar, AdminCategorias];
 const PAGINAS_ADMIN = [
@@ -63,6 +67,10 @@ const PAGINAS_ADMIN = [
 ];
 
 function App() {
+    const { demostracion, escriturasHabilitadas } = useSesionConectada();
+    const clienteAdmin = useMemo(() => demostracion
+        ? crearAdminCatalogoApi({ habilitada: escriturasHabilitadas }, { soloTemporales: false })
+        : undefined, [demostracion, escriturasHabilitadas]);
 
     return (
         <BrowserRouter>
@@ -73,14 +81,16 @@ function App() {
 
                 <Routes>
 
-                    <Route path="/" element={<Index />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/nosotros" element={<Nosotros />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/productos" element={<Productos />} />
-                    <Route path="/contacto" element={<Contacto />} />
-                    <Route path="/productos/:id" element={<DetalleProducto />} />
+                    {!demostracion && <>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/blog" element={<Blog />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/nosotros" element={<Nosotros />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/productos" element={<Productos />} />
+                        <Route path="/contacto" element={<Contacto />} />
+                        <Route path="/productos/:id" element={<DetalleProducto />} />
+                    </>}
 
                     <Route element={<RutaConectada roles={ROLES_TIENDA} publica />}>
                         <Route path={RUTA_LOGIN_CONECTADO} element={<Login conectado />} />
@@ -109,26 +119,29 @@ function App() {
                             element={<RutaConectada roles={ROLES_TIENDA} porUsuario><CompraConectada /></RutaConectada>} />
                     </Route>
 
-                    <Route path="/carrito" element={<Carrito />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/pago" element={<Pago />} />
-                    <Route path="/compra-exitosa" element={<CompraExitosa />} />
-                    <Route path="/pago-error" element={<PagoError />} />
+                    {!demostracion && <>
+                        <Route path="/carrito" element={<Carrito />} />
+                        <Route path="/checkout" element={<Checkout />} />
+                        <Route path="/pago" element={<Pago />} />
+                        <Route path="/compra-exitosa" element={<CompraExitosa />} />
+                        <Route path="/pago-error" element={<PagoError />} />
 
-                    <Route path="/ordenes" element={<Ordenes />} />
-                    <Route path="/ordenes/:id" element={<DetalleOrden />} />
-                    <Route path="/ordenes/:id/boleta" element={<Boleta />} />
+                        <Route path="/ordenes" element={<Ordenes />} />
+                        <Route path="/ordenes/:id" element={<DetalleOrden />} />
+                        <Route path="/ordenes/:id/boleta" element={<Boleta />} />
 
-                    <Route path="/incidencias" element={<Incidencias />} />
-                    <Route path="/incidencias/nueva" element={<NuevaIncidencia />} />
+                        <Route path="/incidencias" element={<Incidencias />} />
+                        <Route path="/incidencias/nueva" element={<NuevaIncidencia />} />
 
-                    {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
-                        <Route key={ruta} path={`/admin${ruta}`} element={<RutaAdmin><Pagina /></RutaAdmin>} />
-                    ))}
-                    <Route element={<RutaConectada roles={['ADMIN']} porUsuario />}>
                         {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
+                            <Route key={ruta} path={`/admin${ruta}`} element={<RutaAdmin><Pagina /></RutaAdmin>} />
+                        ))}
+                    </>}
+                    <Route element={<RutaConectada roles={['ADMIN']} porUsuario />}>
+                        {PAGINAS_ADMIN.filter(([, Pagina]) => !demostracion || PAGINAS_CATALOGO_ADMIN.includes(Pagina))
+                            .map(([ruta, Pagina]) => (
                             <Route key={ruta} path={`${RUTA_ADMIN_CONECTADA}${ruta}`}
-                                element={PAGINAS_CATALOGO_ADMIN.includes(Pagina) ? <Pagina conectado /> : <>
+                                element={PAGINAS_CATALOGO_ADMIN.includes(Pagina) ? <Pagina conectado cliente={clienteAdmin} /> : <>
                                 <p className="alert alert-info m-3">
                                     Panel de demostración con datos locales.{' '}
                                     <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes de Spring Boot</Link>
@@ -137,10 +150,13 @@ function App() {
                                 </>} />
                         ))}
                     </Route>
-                    <Route path="/perfil" element={<Perfil />} />
-                    <Route path="/categorias" element={<Categorias />} />
-                    <Route path="/ofertas" element={<Ofertas />} />
-                    <Route path="/blog/:id" element={<BlogDetalle />} />
+                    {!demostracion && <>
+                        <Route path="/perfil" element={<Perfil />} />
+                        <Route path="/categorias" element={<Categorias />} />
+                        <Route path="/ofertas" element={<Ofertas />} />
+                        <Route path="/blog/:id" element={<BlogDetalle />} />
+                    </>}
+                    {demostracion && <Route path="*" element={<Navigate to={RUTA_CATALOGO_CONECTADO} replace />} />}
 
 
                 </Routes>

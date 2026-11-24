@@ -6,7 +6,7 @@ import {
 } from 'react-router-dom';
 
 import { useCarrito } from '../context/CarritoContext';
-import { esIdProductoLocal, mismoIdProducto } from '../services/carritoService.js';
+import { esIdProductoLocal } from '../services/carritoService.js';
 
 import {
     obtenerProductos,
@@ -28,6 +28,7 @@ export default function Pago() {
 
     const [metodoPago, setMetodoPago] =
         useState('');
+    const [errorStock, setErrorStock] = useState('');
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -159,47 +160,6 @@ export default function Pago() {
     }
 
 
-    function descontarStock() {
-
-        const productos =
-            obtenerProductos();
-
-
-        const productosActualizados =
-            productos.map(
-                (producto) => {
-
-                    const productoCarrito =
-                        carrito.find(
-                            (item) => mismoIdProducto(item.id, producto.id)
-                        );
-
-
-                    if (!productoCarrito) {
-                        return producto;
-                    }
-
-
-                    return {
-                        ...producto,
-
-                        stock: Math.max(
-                            0,
-                            producto.stock -
-                            productoCarrito.cantidad
-                        )
-                    };
-
-                }
-            );
-
-
-        guardarProductos(
-            productosActualizados
-        );
-    }
-
-
     function crearOrden() {
 
         const productosOrden =
@@ -271,11 +231,30 @@ export default function Pago() {
             pago exitoso.
         */
 
-        const nuevaOrden =
-            crearOrden();
+        // El stock del carrito puede haber cambiado desde la última visita al catálogo.
+        const productos = obtenerProductos();
+        const cantidades = new Map();
+        for (const item of carrito) {
+            if (!Number.isSafeInteger(item.cantidad) || item.cantidad < 1) {
+                setErrorStock('Revisa las cantidades del carrito antes de pagar.');
+                return;
+            }
+            const id = Number(item.id);
+            cantidades.set(id, (cantidades.get(id) ?? 0) + item.cantidad);
+        }
+        for (const [id, cantidad] of cantidades) {
+            const producto = productos.find((item) => Number(item.id) === id);
+            if (!producto || !Number.isSafeInteger(producto.stock) || producto.stock < cantidad) {
+                setErrorStock('El stock disponible cambió. Revisa las cantidades del carrito antes de pagar.');
+                return;
+            }
+        }
 
-
-        descontarStock();
+        const nuevaOrden = crearOrden();
+        guardarProductos(productos.map((producto) => {
+            const cantidad = cantidades.get(Number(producto.id));
+            return cantidad === undefined ? producto : { ...producto, stock: producto.stock - cantidad };
+        }));
 
         vaciarCarrito();
 
@@ -294,6 +273,9 @@ export default function Pago() {
 
     return (
         <main className="container my-5">
+            {errorStock && <p role="alert" className="alert alert-warning">
+                {errorStock}{' '}<Link to="/carrito">Volver al carrito</Link>
+            </p>}
 
             <h1 className="mb-4">
                 Pago

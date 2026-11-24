@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:railway": "vite build --mode railway --outDir dist-railway",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "karma start karma.conf.cjs"

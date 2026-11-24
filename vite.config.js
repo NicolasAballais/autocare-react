@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, normalizePath } from 'vite'
+import { fileURLToPath } from 'node:url'
 import { ENVIO_ORDENES_HABILITADO, RUTA_API_ORDENES } from './src/services/ordenesConfiguracion.js'
 import { AUTH_CONECTADA_HABILITADA, RUTAS_POST_AUTH } from './src/services/authConfiguracion.js'
 import { cargarConfiguracionAdmin, esRegistroTemporal } from './src/services/adminCatalogoConfiguracion.js'
@@ -18,14 +19,20 @@ async function comprobarRegistroTemporal(url, recurso, id) {
   }
 }
 
-export default defineConfig(({ command, isPreview }) => {
+export default defineConfig(({ command, isPreview, mode }) => {
   const desarrollo = command === 'serve' && !isPreview
+  const railway = command === 'build' && mode === 'railway'
   const modoPrueba = ENVIO_ORDENES_HABILITADO && desarrollo
   const pruebaAuth = AUTH_CONECTADA_HABILITADA && desarrollo
   const admin = cargarConfiguracionAdmin(process.env, desarrollo)
   return {
     plugins: [react()],
-    define: { __AUTOCARE_PRUEBA_ORDENES__: JSON.stringify(modoPrueba), __AUTOCARE_PRUEBA_AUTH__: JSON.stringify(pruebaAuth),
+    resolve: railway ? { alias: [{
+      find: /^(?:.*\/)?usuarios\.json$/,
+      replacement: normalizePath(fileURLToPath(new URL('./src/data/usuarios.railway.json', import.meta.url))),
+    }] } : undefined,
+    define: { __AUTOCARE_RAILWAY__: JSON.stringify(railway),
+      __AUTOCARE_PRUEBA_ORDENES__: JSON.stringify(modoPrueba), __AUTOCARE_PRUEBA_AUTH__: JSON.stringify(pruebaAuth),
       __AUTOCARE_PRUEBA_ADMIN__: JSON.stringify(admin) },
     server: {
       proxy: {

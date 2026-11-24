@@ -5,7 +5,7 @@ import { useSesionConectada } from '../context/sesionConectada';
 
 export default function Footer() {
     const conectado = useMatch(`${RUTA_CATALOGO_CONECTADO}/*`);
-    const { usuario } = useSesionConectada();
+    const { usuario, demostracion } = useSesionConectada();
     const vendedor = conectado && usuario?.rol === 'VENDEDOR';
 
     return (
@@ -106,7 +106,7 @@ export default function Footer() {
             </p>
 
 
-            {!conectado && <div className="mt-2">
+            {!conectado && !demostracion && <div className="mt-2">
 
                 <Link
                     to="/admin"

@@ -40,20 +40,22 @@ export function sonProductosTemporales(solicitud, catalogo) {
             typeof producto.codigo === 'string' && producto.codigo.startsWith(PREFIJO_PRODUCTO_TEMPORAL))));
 }
 
-export function crearEnvioOrden({ habilitado = modoPruebaOrdenesActivo() } = {}) {
+export function crearEnvioOrden({ habilitado = modoPruebaOrdenesActivo(), soloTemporales = true } = {}) {
     return async function enviar(intento, obtenerToken) {
         if (!habilitado) throw new EnvioOrdenBloqueado('El envío de órdenes está deshabilitado en esta etapa.');
         const solicitud = solicitudDelIntento(intento);
         if (!solicitud) throw new EnvioOrdenBloqueado('El intento de compra guardado no es válido.');
 
-        let catalogo;
-        try {
-            catalogo = await obtenerProductosApi({ cache: 'no-store' });
-        } catch {
-            throw new EnvioOrdenBloqueado('No se pudo verificar el catálogo antes de enviar la compra.');
-        }
-        if (!sonProductosTemporales(solicitud, catalogo)) {
-            throw new EnvioOrdenBloqueado('La prueba admite únicamente productos temporales con código TEST-.');
+        if (soloTemporales) {
+            let catalogo;
+            try {
+                catalogo = await obtenerProductosApi({ cache: 'no-store' });
+            } catch {
+                throw new EnvioOrdenBloqueado('No se pudo verificar el catálogo antes de enviar la compra.');
+            }
+            if (!sonProductosTemporales(solicitud, catalogo)) {
+                throw new EnvioOrdenBloqueado('La prueba admite únicamente productos temporales con código TEST-.');
+            }
         }
         return enviarJsonApi('/ordenes', intento.cuerpo, {
             estadoEsperado: 201, cabeceras: { ...cabeceraBearer(obtenerToken?.()), 'Idempotency-Key': intento.id }

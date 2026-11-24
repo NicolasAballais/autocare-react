@@ -4,7 +4,8 @@ import { useSesionConectada } from '../context/sesionConectada';
 import { obtenerCategoriasApi, obtenerProductosApi } from '../services/catalogoApi';
 
 export default function CatalogoConectado() {
-    const vendedor = useSesionConectada().usuario?.rol === 'VENDEDOR';
+    const { usuario, demostracion } = useSesionConectada();
+    const vendedor = usuario?.rol === 'VENDEDOR';
     const [catalogo, setCatalogo] = useState(null);
     const [error, setError] = useState('');
     const [intento, setIntento] = useState(0);
@@ -46,7 +47,7 @@ export default function CatalogoConectado() {
                         <strong>Catálogo conectado</strong>
                         {!vendedor && <div>Agrega productos y revisa tu compra conectada.</div>}
                     </div>
-                    {!vendedor && <Link className="btn btn-outline-secondary btn-sm" to="/productos">
+                    {!vendedor && !demostracion && <Link className="btn btn-outline-secondary btn-sm" to="/productos">
                         Volver al catálogo local
                     </Link>}
                 </div>

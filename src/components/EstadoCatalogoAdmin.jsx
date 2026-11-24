@@ -7,7 +7,8 @@ export function EstadoCatalogoAdmin({ consulta }) {
     return null;
 }
 
-export function AvisoEscriturasAdmin({ habilitada }) {
+export function AvisoEscriturasAdmin({ habilitada, soloTemporales = true }) {
+    if (habilitada && !soloTemporales) return null;
     return <p className="alert alert-info">
         {habilitada ? 'Modo de prueba activo. Solo se pueden escribir registros temporales autorizados (TEST-).' :
             'Catálogo conectado en modo lectura. Las escrituras administrativas están deshabilitadas.'}

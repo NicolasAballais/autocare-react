@@ -53,6 +53,18 @@ El modo predeterminado permite consultar el catálogo desde el panel. Para autor
 
 Spring Boot acepta un `PUT` completo y carece de edición condicional por versión. El cliente verifica si el registro cambió desde que se abrió el formulario. Realiza la prueba temporal desde una sola sesión administrativa para evitar ediciones simultáneas de esos registros. El proxy comprueba método, ruta e ID, y el cliente React verifica también el contenido del formulario. La prueba se realiza desde el panel.
 
+## Preparar el frontend en Railway
+
+Conecta este repositorio como un servicio Dockerfile. El build usa Node 24, `npm ci` y `npm run build:railway`. Caddy sirve `dist-railway` y Railway termina HTTPS en el dominio público de este servicio. El backend permanece como servicio privado en el mismo proyecto y entorno.
+
+- Define `API_INTERNA=http://autocare-backend.railway.internal:8080`, ajustando el nombre si el servicio difiere. Es una variable de Caddy y solo se usa del lado servidor.
+- Usa `/healthz` como healthcheck del frontend y el `PORT` asignado por Railway. Caddy reenvía `/api/v1/*` a Spring Boot y sirve `index.html` para las rutas de React Router.
+- Configura `MONGODB_URI` y `JWT_SECRET_BASE64` solamente en el backend. Sigue su README para el perfil `railway`, la base aislada `autocarepro_demo` y el healthcheck.
+- El repositorio debe publicarse con `AUTOCARE_DEMO_REGISTRO` y `AUTOCARE_DEMO_ESCRITURAS` cerrados en el backend. El frontend lee ambos valores de `GET /api/v1/configuracion` y arranca con los controles cerrados hasta obtener una respuesta válida.
+- El build `railway` reemplaza el fixture de cuentas locales por una lista vacía, inicia en el catálogo conectado y deshabilita la navegación a los módulos de simulación. El desarrollo local conserva la configuración de Vite y su fixture original.
+
+Con autorización, prueba primero catálogo, rutas directas y login de las cuentas preparadas. Después habilita el registro o las escrituras en el backend de demostración, recarga el navegador y comprueba los roles. Mantén la base original fuera del alcance del usuario de aplicación de Railway.
+
 ## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.

@@ -9,6 +9,7 @@ import { useSesionConectada } from '../context/sesionConectada.js';
 
 
 export default function Checkout({ conectado = false }) {
+    const [errorEntrega, setErrorEntrega] = useState('');
 
     const local = useCarrito();
     const remoto = useCarritoConectado();
@@ -79,8 +80,14 @@ export default function Checkout({ conectado = false }) {
         }
 
 
+        const campos = ['nombre', 'correo', 'telefono', 'comuna', 'direccion'];
+        if (campos.some((campo) => !datosCliente[campo]?.trim()) || !tipoEntrega.trim()) {
+            setErrorEntrega('Completa todos los datos de entrega con un valor válido.');
+            return;
+        }
+        const entrega = Object.fromEntries(campos.map((campo) => [campo, datosCliente[campo].trim()]));
         navigate(conectado ? RUTA_COMPRA_CONECTADA : '/pago', {
-            state: conectado ? { datosCliente, tipoEntrega, compradorId: sesion.id } : { datosCliente, tipoEntrega }
+            state: conectado ? { datosCliente: entrega, tipoEntrega, compradorId: sesion.id } : { datosCliente: entrega, tipoEntrega }
         });
     }
 
@@ -134,6 +141,7 @@ export default function Checkout({ conectado = false }) {
             {conectado && <p>Los datos de entrega se usan en esta sesión. Spring Boot recibe los productos y cantidades.</p>}
 
 
+            {errorEntrega && <p className="alert alert-danger" role="alert">{errorEntrega}</p>}
             <form onSubmit={continuarPago}>
 
                 <div className="row g-4">

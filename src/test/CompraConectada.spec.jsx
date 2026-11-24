@@ -154,6 +154,25 @@ describe('Compra conectada', () => {
         expect(localStorage.getItem('carritoAutoCare')).toBe(local);
     });
 
+    it('impide revisar la compra conectada si falta la dirección de entrega', async () => {
+        guardarCarrito();
+        const fetchSimulado = simulacionApi();
+        renderizar(RUTA_CHECKOUT_CONECTADO);
+        const revisar = screen.getByRole('button', { name: 'Revisar compra' });
+        await esperarHabilitado(revisar);
+        for (const [etiqueta, value] of Object.entries({
+            Teléfono: '900000000', Comuna: 'Santiago', 'Método de entrega': 'Envío estándar'
+        })) {
+            fireEvent.change(screen.getByLabelText(etiqueta), { target: { value } });
+        }
+        expect(screen.getByLabelText('Dirección de entrega').validity.valueMissing).toBeTrue();
+        expect(revisar.form.checkValidity()).toBeFalse();
+        fireEvent.click(revisar);
+        expect(screen.getByRole('heading', { name: 'Checkout conectado' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Confirmar compra' })).toBeNull();
+        expect(posts(fetchSimulado)).toEqual([]);
+    });
+
     it('mantiene el formulario y muestra una solicitud sin precios ni datos de entrega', async () => {
         guardarCarrito();
         const fetchSimulado = simulacionApi();

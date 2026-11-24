@@ -19,7 +19,7 @@ export default function Carrito({ conectado = false }) {
     const carrito = conectado ? revision.lineas : local.carrito;
     const total = conectado ? revision.total : local.total;
     const bloqueado = conectado && Boolean(remoto.intento);
-    const comprador = useSesionConectada().usuario;
+    const { usuario: comprador, demostracion } = useSesionConectada();
 
     if (conectado && comprador?.rol === 'VENDEDOR') {
         return <main className="container my-5"><p>El rol VENDEDOR permite consultar productos y órdenes.</p>
@@ -348,7 +348,7 @@ export default function Carrito({ conectado = false }) {
 
             )}
 
-            {conectado && !bloqueado && (
+            {conectado && !demostracion && !bloqueado && (
                 <ImportarCarritoLocal key={comprador?.id ?? 'sin-sesion'} carritoLocal={local.carrito}
                     productos={revision.productos} aplicar={remoto.aplicarPropuesta} />
             )}

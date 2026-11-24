@@ -1,7 +1,7 @@
 import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { RUTA_CHECKOUT_CONECTADO } from '../context/catalogo.js';
-import { enviarOrdenApi, obtenerOrdenApi, prepararSolicitudOrden, solicitudDelIntento,
+import { crearEnvioOrden, obtenerOrdenApi, prepararSolicitudOrden, solicitudDelIntento,
     sonProductosTemporales } from '../services/ordenesApi.js';
 import { modoPruebaOrdenesActivo } from '../services/ordenesConfiguracion.js';
 import { useSesionConectada } from '../context/sesionConectada.js';
@@ -21,10 +21,11 @@ function MensajeCompra({ mensaje }) {
     );
 }
 
-export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesActivo(),
-    enviar = enviarOrdenApi, consultar = obtenerOrdenApi }) {
+export default function CompraConectada({ envioHabilitado, enviar, consultar = obtenerOrdenApi }) {
     const { state } = useLocation();
-    const { usuario } = useSesionConectada();
+    const { usuario, demostracion, escriturasHabilitadas } = useSesionConectada();
+    const habilitado = demostracion ? escriturasHabilitadas === true : envioHabilitado ?? modoPruebaOrdenesActivo();
+    const enviarCompra = enviar ?? crearEnvioOrden({ habilitado, soloTemporales: !demostracion });
     const { datosCliente, tipoEntrega } = (state?.compradorId === usuario?.id ? state : null) ?? {};
     const { ordenConfirmada, intento, mensaje, procesando, registrarCompra, consultarPendiente,
         reintentarCompra } = useCarritoConectado();
@@ -48,7 +49,7 @@ export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesAct
 
     if (intento) {
         const solicitudGuardada = solicitudDelIntento(intento);
-        const sonTemporales = sonProductosTemporales(solicitudGuardada, productos);
+        const productosPermitidos = demostracion || sonProductosTemporales(solicitudGuardada, productos);
         return (
             <main className="container my-5">
                 <h1>Compra pendiente de verificación</h1>
@@ -60,10 +61,10 @@ export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesAct
                         <button type="button" className="btn btn-outline-secondary" disabled={procesando}
                             onClick={() => consultarPendiente(consultar)}>Consultar orden</button>
                         <button type="button" className="btn btn-danger ms-2"
-                            disabled={procesando || !rolPuedeComprar || !envioHabilitado || !sonTemporales}
-                            onClick={() => reintentarCompra(enviar, consultar)}>Reintentar la misma compra</button>
-                        {!envioHabilitado && <p className="text-muted mt-2">Envío de órdenes deshabilitado durante la revisión.</p>}
-                        {envioHabilitado && !sonTemporales && <p className="text-muted mt-2">
+                            disabled={procesando || !rolPuedeComprar || !habilitado || !productosPermitidos}
+                            onClick={() => reintentarCompra(enviarCompra, consultar)}>Reintentar la misma compra</button>
+                        {!habilitado && <p className="text-muted mt-2">Envío de órdenes deshabilitado durante la revisión.</p>}
+                        {habilitado && !productosPermitidos && <p className="text-muted mt-2">
                             El reintento requiere verificar todos los productos temporales con código TEST-.
                         </p>}
                     </>
@@ -83,23 +84,23 @@ export default function CompraConectada({ envioHabilitado = modoPruebaOrdenesAct
     }
 
     const solicitud = prepararSolicitudOrden(lineas);
-    const sonTemporales = sonProductosTemporales(solicitud, productos);
+    const productosPermitidos = demostracion || sonProductosTemporales(solicitud, productos);
     return (
         <main className="container my-5">
             <h1>Revisar compra conectada</h1>
             <p>Entrega seleccionada: {tipoEntrega}</p>
             <p>Los datos de entrega se usan en esta sesión y quedan fuera del contrato de órdenes.</p>
             <p>Total estimado: <strong>{formatoPrecio.format(total)}</strong>. Spring Boot calcula el total definitivo.</p>
-            {!envioHabilitado && <div className="alert alert-warning">Envío de órdenes deshabilitado durante la revisión.</div>}
-            {envioHabilitado && !sonTemporales && <p>La prueba admite únicamente productos temporales con código TEST-.</p>}
+            {!habilitado && <div className="alert alert-warning">Envío de órdenes deshabilitado durante la revisión.</div>}
+            {habilitado && !productosPermitidos && <p>La prueba admite únicamente productos temporales con código TEST-.</p>}
             <MensajeCompra mensaje={mensaje} />
             <details className="mb-3">
                 <summary>Ver solicitud de la orden</summary>
                 <pre>{JSON.stringify(solicitud, null, 2)}</pre>
             </details>
             <button type="button" className="btn btn-danger"
-                disabled={!rolPuedeComprar || !envioHabilitado || !sonTemporales || !puedeContinuar || procesando}
-                onClick={() => registrarCompra(solicitud, enviar, consultar)}>Confirmar compra</button>
+                disabled={!rolPuedeComprar || !habilitado || !productosPermitidos || !puedeContinuar || procesando}
+                onClick={() => registrarCompra(solicitud, enviarCompra, consultar)}>Confirmar compra</button>
             <Link className="btn btn-outline-secondary ms-2" to={RUTA_CHECKOUT_CONECTADO}
                 state={{ datosCliente, tipoEntrega, compradorId: usuario.id }}>Volver al checkout</Link>
         </main>

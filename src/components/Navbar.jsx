@@ -8,10 +8,12 @@ import { useSesionConectada } from '../context/sesionConectada';
 
 export default function Navbar() {
 
-    const conectado = Boolean(useMatch(`${RUTA_CATALOGO_CONECTADO}/*`));
+    const rutaConectada = Boolean(useMatch(`${RUTA_CATALOGO_CONECTADO}/*`));
 
     const navigate = useNavigate();
     const sesionConectada = useSesionConectada();
+    const { demostracion } = sesionConectada;
+    const conectado = demostracion || rutaConectada;
     const sesion = conectado ? sesionConectada.usuario : obtenerSesion();
     const vendedor = conectado && sesion?.rol === 'VENDEDOR';
     const { cantidadTotal } = useCarrito();
@@ -34,7 +36,7 @@ export default function Navbar() {
             <div className="container">
 
                 <Link
-                    to={vendedor ? RUTA_CATALOGO_CONECTADO : '/'}
+                    to={vendedor || demostracion ? RUTA_CATALOGO_CONECTADO : '/'}
                     className="navbar-brand fw-bold"
                 >
                     AutoCare<span className="text-danger">Pro</span>
@@ -59,7 +61,7 @@ export default function Navbar() {
 
                     <ul className="navbar-nav">
 
-                        {!vendedor && <li className="nav-item">
+                        {!vendedor && !demostracion && <li className="nav-item">
                             <Link className="nav-link" to="/">
                                 Inicio
                             </Link>
@@ -123,7 +125,7 @@ export default function Navbar() {
 
                         )}
 
-                        {!vendedor && <>
+                        {!vendedor && !demostracion && <>
                             <li className="nav-item">
                                 <Link className="nav-link" to="/nosotros">
                                     Nosotros
