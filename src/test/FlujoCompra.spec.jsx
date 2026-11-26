@@ -14,6 +14,10 @@ import {
 import Carrito from '../pages/Carrito';
 import Checkout from '../pages/Checkout';
 import Pago from '../pages/Pago';
+import CompraExitosa from '../pages/CompraExitosa';
+import DetalleOrden from '../pages/DetalleOrden';
+import Boleta from '../pages/Boleta';
+import { ordenPerteneceAUsuario } from '../services/ordenesService';
 
 import {
     CarritoProvider
@@ -121,6 +125,59 @@ describe('Flujo de compra', () => {
             expect(cantidad.value).toBe('2');
         }
         expect(localStorage.getItem('carritoAutoCare')).toBe(guardado);
+    });
+
+    it('permite que un invitado vea la orden y la boleta desde el pago local exitoso', () => {
+        localStorage.setItem('carritoAutoCare', JSON.stringify([
+            { id: 1, nombre: 'Aceite de prueba', precio: 1000, stock: 4, cantidad: 1 }
+        ]));
+        localStorage.setItem('productosAutoCare', JSON.stringify([{ id: 1, stock: 4 }]));
+        localStorage.setItem('ordenesAutoCare', '[]');
+
+        renderizarConCarrito(
+            <Routes>
+                <Route path="/pago" element={<Pago />} />
+                <Route path="/compra-exitosa" element={<CompraExitosa />} />
+                <Route path="/ordenes/:id" element={<DetalleOrden />} />
+                <Route path="/ordenes/:id/boleta" element={<Boleta />} />
+            </Routes>,
+            { pathname: '/pago', state: {
+                datosCliente: { nombre: 'Invitado de prueba', correo: 'invitado@example.test' },
+                tipoEntrega: 'Envío estándar'
+            } }
+        );
+
+        fireEvent.click(screen.getByRole('radio', { name: 'Tarjeta de débito' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Pagar' }));
+        expect(screen.getByRole('heading', { name: 'Compra realizada con éxito' })).toBeTruthy();
+        const [orden] = JSON.parse(localStorage.getItem('ordenesAutoCare'));
+        expect(JSON.parse(localStorage.getItem('productosAutoCare'))[0].stock).toBe(3);
+        expect(JSON.parse(localStorage.getItem('carritoAutoCare'))).toEqual([]);
+
+        fireEvent.click(screen.getByRole('link', { name: 'Ver orden' }));
+        expect(screen.getByRole('heading', { name: 'Orden #' + orden.id })).toBeTruthy();
+        fireEvent.click(screen.getByRole('link', { name: 'Ver boleta' }));
+        expect(screen.getByRole('heading', { name: 'Boleta AutoCarePro' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('link', { name: 'Volver a la orden' }));
+        expect(screen.getByRole('heading', { name: 'Orden #' + orden.id })).toBeTruthy();
+    });
+
+    it('exige sesión al abrir directamente una boleta invitada sin pasar por la confirmación', () => {
+        localStorage.setItem('ordenesAutoCare', JSON.stringify([{ id: 123, usuarioId: null }]));
+        renderizarConCarrito(
+            <Routes><Route path="/ordenes/:id/boleta" element={<Boleta />} /></Routes>,
+            '/ordenes/123/boleta'
+        );
+        expect(screen.getByText('Debes iniciar sesión para consultar una boleta.')).toBeTruthy();
+    });
+
+    it('resuelve las órdenes antiguas por correo y usa el nombre solamente cuando falta el correo', () => {
+        const usuario = { id: 1, nombre: 'Rosa', apellido: 'Pérez', correo: 'rosa@example.test', rol: 'cliente' };
+        const nombre = 'Rosa Pérez';
+        expect(ordenPerteneceAUsuario({ cliente: { nombre, correo: 'otra@example.test' } }, usuario)).toBeFalse();
+        expect(ordenPerteneceAUsuario({ cliente: { nombre, correo: ' ROSA@example.test ' } }, usuario)).toBeTrue();
+        expect(ordenPerteneceAUsuario({ cliente: { nombre } }, usuario)).toBeTrue();
+        expect(ordenPerteneceAUsuario({ usuarioId: 2, cliente: { nombre, correo: usuario.correo } }, usuario)).toBeFalse();
     });
 
     it('rechaza el pago local cuando el stock vigente ya no alcanza', () => {

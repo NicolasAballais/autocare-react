@@ -1,6 +1,7 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 
 import {
+    esOrdenInvitadaDeConfirmacion,
     obtenerOrdenes,
     ordenPerteneceAUsuario
 } from '../services/ordenesService';
@@ -13,12 +14,15 @@ import {
 export default function Boleta() {
 
     const { id } = useParams();
+    const { state } = useLocation();
 
     const sesion = obtenerSesion();
 
     const orden = obtenerOrdenes().find(
         (item) => item.id === Number(id)
     );
+    const esInvitada = !sesion && esOrdenInvitadaDeConfirmacion(orden, state?.ordenInvitadaId);
+    const rutaOrdenes = sesion?.rol === 'admin' ? '/admin/ordenes' : '/ordenes';
 
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -35,7 +39,7 @@ export default function Boleta() {
     };
 
 
-    if (!sesion) {
+    if (!sesion && !esInvitada) {
 
         return (
             <main className="container my-5 text-center">
@@ -56,13 +60,7 @@ export default function Boleta() {
     }
 
 
-    if (
-        !orden ||
-        !ordenPerteneceAUsuario(
-            orden,
-            sesion
-        )
-    ) {
+    if (!orden || (!esInvitada && !ordenPerteneceAUsuario(orden, sesion))) {
 
         return (
             <main className="container my-5 text-center">
@@ -76,11 +74,7 @@ export default function Boleta() {
                 </p>
 
                 <Link
-                    to={
-                        sesion.rol === 'admin'
-                            ? '/admin/ordenes'
-                            : '/ordenes'
-                    }
+                    to={rutaOrdenes}
                     className="btn btn-danger mt-3"
                 >
                     Volver
@@ -275,20 +269,17 @@ export default function Boleta() {
 
                         <Link
                             to={`/ordenes/${orden.id}`}
+                            state={esInvitada ? state : undefined}
                             className="btn btn-outline-primary"
                         >
                             Volver a la orden
                         </Link>
 
                         <Link
-                            to={
-                                sesion.rol === 'admin'
-                                    ? '/admin/ordenes'
-                                    : '/ordenes'
-                            }
+                            to={esInvitada ? '/productos' : rutaOrdenes}
                             className="btn btn-outline-secondary"
                         >
-                            Volver
+                            {esInvitada ? 'Seguir comprando' : 'Volver'}
                         </Link>
 
                     </div>

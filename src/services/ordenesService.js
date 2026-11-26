@@ -40,16 +40,9 @@ export function ordenPerteneceAUsuario(orden, usuario) {
         return Number(orden.usuarioId) === Number(usuario.id);
     }
 
-    const correoOrden =
-        orden.usuarioCorreo ||
-        orden.cliente?.correo ||
-        '';
-
-    if (
-        correoOrden &&
-        normalizarTexto(correoOrden) === normalizarTexto(usuario.correo)
-    ) {
-        return true;
+    const correoOrden = normalizarTexto(orden.usuarioCorreo) || normalizarTexto(orden.cliente?.correo);
+    if (correoOrden) {
+        return correoOrden === normalizarTexto(usuario.correo);
     }
 
     const nombreOrden = orden.cliente?.nombre || '';
@@ -61,6 +54,10 @@ export function ordenPerteneceAUsuario(orden, usuario) {
         nombreOrden &&
         normalizarTexto(nombreOrden) === normalizarTexto(nombreUsuario)
     );
+}
+
+export function esOrdenInvitadaDeConfirmacion(orden, ordenInvitadaId) {
+    return orden?.usuarioId === null && orden.id === ordenInvitadaId;
 }
 
 export function obtenerOrdenesUsuario(usuario) {

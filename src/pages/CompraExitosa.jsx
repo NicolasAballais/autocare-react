@@ -6,6 +6,7 @@ export default function CompraExitosa() {
     const location = useLocation();
 
     const orden = location.state?.orden;
+    const accesoInvitado = orden?.usuarioId === null ? { ordenInvitadaId: orden.id } : undefined;
 
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
@@ -275,6 +276,7 @@ export default function CompraExitosa() {
 
                 <Link
                     to={`/ordenes/${orden.id}`}
+                    state={accesoInvitado}
                     className="btn btn-primary"
                 >
                     Ver orden
@@ -282,6 +284,7 @@ export default function CompraExitosa() {
 
                 <Link
                     to={`/ordenes/${orden.id}/boleta`}
+                    state={accesoInvitado}
                     className="btn btn-outline-primary"
                 >
                     Ver boleta
