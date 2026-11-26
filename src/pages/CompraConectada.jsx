@@ -1,6 +1,6 @@
 import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
-import { RUTA_CHECKOUT_CONECTADO } from '../context/catalogo.js';
+import { RUTA_CHECKOUT_CONECTADO, RUTA_ORDENES_CONECTADAS } from '../context/catalogo.js';
 import { crearEnvioOrden, obtenerOrdenApi, prepararSolicitudOrden, solicitudDelIntento,
     sonProductosTemporales } from '../services/ordenesApi.js';
 import { modoPruebaOrdenesActivo } from '../services/ordenesConfiguracion.js';
@@ -43,6 +43,9 @@ export default function CompraConectada({ envioHabilitado, enviar, consultar = o
                         <li key={producto.productoId}>{producto.nombre} × {producto.cantidad}</li>
                     ))}</ul>
                 )}
+                <Link className="btn btn-outline-primary" to={`${RUTA_ORDENES_CONECTADAS}/${ordenConfirmada.id}/boleta`}>
+                    Ver comprobante
+                </Link>
             </main>
         );
     }

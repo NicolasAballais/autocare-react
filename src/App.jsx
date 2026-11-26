@@ -101,6 +101,7 @@ function App() {
                     <Route element={<RutaConectada />}>
                         <Route path={RUTA_ORDENES_CONECTADAS} element={<OrdenesConectadas />} />
                         <Route path={`${RUTA_ORDENES_CONECTADAS}/:id`} element={<OrdenesConectadas />} />
+                        <Route path={`${RUTA_ORDENES_CONECTADAS}/:id/boleta`} element={<OrdenesConectadas comprobante />} />
                     </Route>
 
                     <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>

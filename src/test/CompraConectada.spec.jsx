@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CarritoProvider } from '../context/CarritoContext.jsx';
-import { RUTA_CARRITO_CONECTADO, RUTA_CHECKOUT_CONECTADO, RUTA_COMPRA_CONECTADA } from '../context/catalogo.js';
+import { RUTA_CARRITO_CONECTADO, RUTA_CHECKOUT_CONECTADO, RUTA_COMPRA_CONECTADA,
+    RUTA_ORDENES_CONECTADAS } from '../context/catalogo.js';
 import { SesionConectadaContext } from '../context/sesionConectada.js';
 import Carrito from '../pages/Carrito.jsx';
 import Checkout from '../pages/Checkout.jsx';
@@ -231,6 +232,8 @@ describe('Compra conectada', () => {
         expect(screen.getByText('$27.500')).toBeTruthy();
         expect(screen.getByText(id)).toBeTruthy();
         expect(screen.getByText('Aceite de prueba × 1')).toBeTruthy();
+        expect(screen.getByRole('link', { name: 'Ver comprobante' }).getAttribute('href'))
+            .toBe(`${RUTA_ORDENES_CONECTADAS}/${id}/boleta`);
         expect(posts(fetchSimulado).length).toBe(1);
         expect(JSON.parse(localStorage.getItem(CLAVE)).carrito).toEqual([]);
         expect(localStorage.getItem('carritoAutoCare')).toBe('[{"id":1,"cantidad":2}]');
@@ -267,6 +270,7 @@ describe('Compra conectada', () => {
         const vista = renderizar(entrega, true);
         fireEvent.click(await botonConfirmarHabilitado());
         await screen.findByText('La orden sigue sin confirmación. Puedes volver a consultarla.');
+        expect(screen.queryByRole('link', { name: 'Ver comprobante' })).toBeNull();
         const id = posts(fetchSimulado)[0][1].headers['Idempotency-Key'];
         expect(fetchSimulado).toHaveBeenCalledWith(`/api/v1/ordenes/${id}`, jasmine.objectContaining({
             method: 'GET', headers: jasmine.objectContaining({ Authorization: `Bearer ${TOKEN}` })
