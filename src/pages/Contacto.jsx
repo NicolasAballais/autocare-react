@@ -1,7 +1,12 @@
 import { useState } from 'react';
 
 
-export default function Contacto() {
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { enviarContactoApi } from '../services/operacionesApi.js';
+
+export default function Contacto({ conectado = false }) {
+    const escritura = useEscrituraConectada();
 
     const [formulario, setFormulario] = useState({
         nombre: '',
@@ -99,7 +104,7 @@ export default function Contacto() {
     }
 
 
-    function manejarEnvio(evento) {
+    async function manejarEnvio(evento) {
 
         evento.preventDefault();
 
@@ -111,31 +116,19 @@ export default function Contacto() {
         }
 
 
-        const mensajesGuardados =
-            JSON.parse(
-                localStorage.getItem(
-                    'mensajesContactoAutoCare'
-                )
-            ) || [];
-
-
-        const nuevoMensaje = {
-            id: Date.now(),
-            nombre: formulario.nombre.trim(),
-            correo: formulario.correo.trim(),
-            comentario: formulario.comentario.trim(),
-            fecha: new Date().toLocaleString('es-CL')
-        };
-
-
-        localStorage.setItem(
-            'mensajesContactoAutoCare',
-            JSON.stringify([
-                ...mensajesGuardados,
-                nuevoMensaje
-            ])
-        );
-
+        if (conectado) {
+            if (!await escritura.ejecutar(enviarContactoApi, formulario)) return;
+        } else {
+            const mensajesGuardados = JSON.parse(localStorage.getItem('mensajesContactoAutoCare')) || [];
+            const nuevoMensaje = {
+                id: Date.now(),
+                nombre: formulario.nombre.trim(),
+                correo: formulario.correo.trim(),
+                comentario: formulario.comentario.trim(),
+                fecha: new Date().toLocaleString('es-CL')
+            };
+            localStorage.setItem('mensajesContactoAutoCare', JSON.stringify([...mensajesGuardados, nuevoMensaje]));
+        }
 
         setFormulario({
             nombre: '',
@@ -173,6 +166,7 @@ export default function Contacto() {
                             </p>
 
 
+                            {conectado && <EstadoEscrituraConectada escritura={escritura} />}
                             {mensajeExito && (
 
                                 <div
@@ -316,6 +310,7 @@ export default function Contacto() {
 
                                 <button
                                     type="submit"
+                                    disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                                     className="btn btn-danger w-100 btn-lg"
                                 >
                                     Enviar mensaje

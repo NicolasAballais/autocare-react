@@ -86,20 +86,20 @@ export default function CompraConectada({ envioHabilitado, enviar, consultar = o
         );
     }
 
-    const solicitud = prepararSolicitudOrden(lineas);
+    const solicitud = prepararSolicitudOrden(lineas, { ...datosCliente, tipo: tipoEntrega });
     const productosPermitidos = demostracion || sonProductosTemporales(solicitud, productos);
     return (
         <main className="container my-5">
             <h1>Revisar compra conectada</h1>
             <p>Entrega seleccionada: {tipoEntrega}</p>
-            <p>Los datos de entrega se usan en esta sesión y quedan fuera del contrato de órdenes.</p>
+            <p>Los datos de entrega se guardarán con la orden.</p>
             <p>Total estimado: <strong>{formatoPrecio.format(total)}</strong>. Spring Boot calcula el total definitivo.</p>
             {!habilitado && <div className="alert alert-warning">Envío de órdenes deshabilitado durante la revisión.</div>}
             {habilitado && !productosPermitidos && <p>La prueba admite únicamente productos temporales con código TEST-.</p>}
             <MensajeCompra mensaje={mensaje} />
             <details className="mb-3">
-                <summary>Ver solicitud de la orden</summary>
-                <pre>{JSON.stringify(solicitud, null, 2)}</pre>
+                <summary>Ver productos de la solicitud</summary>
+                <pre>{JSON.stringify({ productos: solicitud.productos }, null, 2)}</pre>
             </details>
             <button type="button" className="btn btn-danger"
                 disabled={!rolPuedeComprar || !habilitado || !productosPermitidos || !puedeContinuar || procesando}

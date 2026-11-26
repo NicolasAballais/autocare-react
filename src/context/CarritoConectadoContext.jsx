@@ -108,7 +108,8 @@ export function CarritoConectadoProvider({ children }) {
     }
 
     function guardarConfirmacion(respuesta, intento) {
-        const orden = validarOrdenConfirmada(respuesta, intento);
+        const orden = { ...validarOrdenConfirmada(respuesta, intento) };
+        delete orden.entrega;
         const actual = estadoDelIntento(intento);
         if (!actual) return;
 

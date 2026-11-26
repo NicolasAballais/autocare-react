@@ -9,6 +9,8 @@ const usuario = { id: '6400000000000000000000a1', nombre: 'Usuario de prueba', c
 const token = 'token-simulado';
 const orden = {
     id: '6700000000000000000000a1', fechaCreacion: '2026-07-30T02:30:00Z', estado: 'PROCESANDO', total: 57234.5,
+    entrega: { tipo: 'Envío estándar', nombre: 'Ana', direccion: 'Calle ficticia 10', comuna: 'Santiago',
+        correo: 'ana@example.test', telefono: '900000000' },
     productos: [
         { productoId: '6600000000000000000000a1', nombre: 'Aceite al comprar', cantidad: 2,
             precioOriginal: 32000, descuento: 12.5, precioUnitario: 28000, subtotal: 56000 },
@@ -56,6 +58,8 @@ describe('Comprobante de compra conectado', () => {
 
     it('CLIENTE lo abre desde su orden y ve los valores históricos del servidor', async () => {
         const peticiones = montar(rutaDetalle);
+        const despacho = await screen.findByRole('region', { name: 'Datos de entrega' });
+        expect(within(despacho).getByText('Calle ficticia 10, Santiago')).toBeTruthy();
         fireEvent.click(await screen.findByRole('link', { name: 'Ver comprobante' }));
         expect(window.location.pathname).toBe(rutaComprobante);
         expect(screen.getByRole('heading', { name: 'Comprobante de compra' })).toBeTruthy();
@@ -88,6 +92,12 @@ describe('Comprobante de compra conectado', () => {
             expect(screen.getByText('Total confirmado: $57.234,5')).toBeTruthy();
         });
     }
+
+    it('vendedor consulta el detalle sin mostrar los datos de despacho', async () => {
+        montar(rutaDetalle, { rol: 'VENDEDOR' });
+        expect(await screen.findByRole('link', { name: 'Ver comprobante' })).toBeTruthy();
+        expect(screen.queryByRole('region', { name: 'Datos de entrega' })).toBeNull();
+    });
 
     it('redirige al login conectado si falta la sesión', async () => {
         const peticiones = montar(rutaComprobante, { rol: null });

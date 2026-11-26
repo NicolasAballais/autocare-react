@@ -11,35 +11,38 @@ import { RUTA_ORDENES_CONECTADAS, useBaseAdmin } from '../context/catalogo.js';
 import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
 import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
 import { listarCategoriasAdmin, listarProductosAdmin } from '../services/adminCatalogoApi.js';
-import { useSesionConectada } from '../context/sesionConectada.js';
+import { useConsultaConectada } from '../hooks/useOperacionesConectadas.js';
+import { listarOrdenesApi } from '../services/ordenesApi.js';
+import { formatearRegistro, listarClientesApi, listarIncidenciasApi } from '../services/operacionesApi.js';
 
 export default function AdminPanel({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
-    const { demostracion } = useSesionConectada();
 
     const productosApi = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
     const categoriasApi = useConsultaCatalogoAdmin(conectado, listarCategoriasAdmin);
-    const productosLocales = demostracion ? [] : obtenerProductos();
-    const productos = conectado ? productosApi.datos : productosLocales;
-    const ordenes = demostracion ? [] : obtenerOrdenes();
-    const incidencias = demostracion ? [] : obtenerIncidencias();
+    const ordenesApi = useConsultaConectada(conectado, listarOrdenesApi);
+    const incidenciasApi = useConsultaConectada(conectado, listarIncidenciasApi);
+    const clientesApi = useConsultaConectada(conectado, listarClientesApi);
+    const productos = conectado ? productosApi.datos : obtenerProductos();
+    const ordenes = conectado ? ordenesApi.datos?.map(formatearRegistro) : obtenerOrdenes();
+    const incidencias = conectado ? incidenciasApi.datos?.map(formatearRegistro) : obtenerIncidencias();
     const categorias = conectado ? categoriasApi.datos : obtenerCategorias();
-    const clientes = demostracion ? [] : obtenerClientes();
+    const clientes = conectado ? clientesApi.datos : obtenerClientes();
 
 
-    const productosStockCritico = productosLocales.filter(
+    const productosStockCritico = productos?.filter(
         (producto) =>
             producto.stock <= producto.stockCritico
     );
 
 
-    const ordenesProcesando = ordenes.filter(
+    const ordenesProcesando = ordenes?.filter(
         (orden) =>
             orden.estado === 'Procesando'
     );
 
 
-    const incidenciasPendientes = incidencias.filter(
+    const incidenciasPendientes = incidencias?.filter(
         (incidencia) =>
             incidencia.estado === 'Pendiente'
     );
@@ -57,7 +60,6 @@ export default function AdminPanel({ conectado = false }) {
                 <p className="text-muted">
                     Gestión general de AutoCarePro
                 </p>
-                {demostracion && <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes conectadas</Link>}
 
             </div>
 
@@ -146,7 +148,6 @@ export default function AdminPanel({ conectado = false }) {
                 </div>
 
 
-                {!demostracion && <>
                 {/* ÓRDENES */}
 
                 <div className="col-md-6 col-lg-3">
@@ -160,14 +161,15 @@ export default function AdminPanel({ conectado = false }) {
                                 <i className="bi bi-receipt fs-2 text-primary"></i>
 
                                 <span className="badge text-bg-warning">
-                                    {ordenesProcesando.length}
+                                    {ordenesProcesando?.length ?? '—'}
                                 </span>
 
                             </div>
 
                             <h4>
-                                Órdenes {conectado && <small className="text-muted">· Simulación local</small>}
+                                Órdenes
                             </h4>
+                            <EstadoCatalogoAdmin consulta={ordenesApi} />
 
                             <p className="text-muted">
                                 Revisar compras y actualizar su estado.
@@ -201,14 +203,15 @@ export default function AdminPanel({ conectado = false }) {
                                 <i className="bi bi-people fs-2 text-success"></i>
 
                                 <span className="badge text-bg-secondary">
-                                    {clientes.length}
+                                    {clientes?.length ?? '—'}
                                 </span>
 
                             </div>
 
                             <h4>
-                                Usuarios {conectado && <small className="text-muted">· Simulación local</small>}
+                                Usuarios
                             </h4>
+                            <EstadoCatalogoAdmin consulta={clientesApi} />
 
                             <p className="text-muted">
                                 Revisar clientes, editar sus datos y consultar su historial.
@@ -241,14 +244,15 @@ export default function AdminPanel({ conectado = false }) {
                                 <i className="bi bi-bell fs-2 text-danger"></i>
 
                                 <span className="badge text-bg-danger">
-                                    {productosStockCritico.length}
+                                    {productosStockCritico?.length ?? '—'}
                                 </span>
 
                             </div>
 
                             <h4>
-                                Notificaciones {conectado && <small className="text-muted">· Simulación local</small>}
+                                Notificaciones
                             </h4>
+                            <EstadoCatalogoAdmin consulta={productosApi} />
 
                             <p className="text-muted">
                                 Revisar productos con stock crítico.
@@ -281,14 +285,15 @@ export default function AdminPanel({ conectado = false }) {
                                 <i className="bi bi-exclamation-circle fs-2 text-warning"></i>
 
                                 <span className="badge text-bg-warning">
-                                    {incidenciasPendientes.length}
+                                    {incidenciasPendientes?.length ?? '—'}
                                 </span>
 
                             </div>
 
                             <h4>
-                                Incidencias {conectado && <small className="text-muted">· Simulación local</small>}
+                                Incidencias
                             </h4>
+                            <EstadoCatalogoAdmin consulta={incidenciasApi} />
 
                             <p className="text-muted">
                                 Revisar y gestionar problemas reportados.
@@ -323,7 +328,7 @@ export default function AdminPanel({ conectado = false }) {
                             </div>
 
                             <h4>
-                                Reportes {conectado && <small className="text-muted">· Simulación local</small>}
+                                Reportes
                             </h4>
 
                             <p className="text-muted">
@@ -343,7 +348,6 @@ export default function AdminPanel({ conectado = false }) {
 
                 </div>
 
-                </>}
             </div>
 
         </main>

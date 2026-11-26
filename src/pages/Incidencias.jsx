@@ -8,13 +8,20 @@ import {
     obtenerSesion
 } from '../services/usuariosService';
 
-export default function Incidencias() {
+import { useSesionConectada } from '../context/sesionConectada.js';
+import { RUTA_INCIDENCIAS_CONECTADAS } from '../context/catalogo.js';
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaConectada } from '../hooks/useOperacionesConectadas.js';
+import { formatearRegistro, listarIncidenciasApi } from '../services/operacionesApi.js';
 
-    const sesion = obtenerSesion();
+export default function Incidencias({ conectado = false }) {
 
-    const incidencias = sesion
-        ? obtenerIncidenciasUsuario(sesion)
-        : [];
+    const { usuario } = useSesionConectada();
+    const consulta = useConsultaConectada(conectado, listarIncidenciasApi);
+    const sesion = conectado ? usuario : obtenerSesion();
+
+    const incidencias = conectado ? (consulta.datos ?? []).map(formatearRegistro) :
+        sesion ? obtenerIncidenciasUsuario(sesion) : [];
 
     if (!sesion) {
 
@@ -54,7 +61,7 @@ export default function Incidencias() {
                 </div>
 
                 <Link
-                    to="/incidencias/nueva"
+                    to={`${conectado ? RUTA_INCIDENCIAS_CONECTADAS : '/incidencias'}/nueva`}
                     className="btn btn-danger"
                 >
                     Nueva incidencia
@@ -62,7 +69,8 @@ export default function Incidencias() {
 
             </div>
 
-            {incidencias.length === 0 ? (
+            {conectado && <EstadoCatalogoAdmin consulta={consulta} />}
+            {(!conectado || consulta.datos) && (incidencias.length === 0 ? (
 
                 <div className="alert alert-info">
                     No tienes incidencias registradas.
@@ -144,7 +152,7 @@ export default function Incidencias() {
 
                 </div>
 
-            )}
+            ))}
 
         </main>
     );

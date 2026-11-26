@@ -1,25 +1,28 @@
 import { useState } from 'react';
 import { obtenerSesion, actualizarUsuarioPerfil } from '../services/usuariosService';
 import { useSesionConectada } from '../context/sesionConectada.js';
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useConsultaConectada, useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { editarPerfilApi, obtenerPerfilApi } from '../services/operacionesApi.js';
 
 export default function Perfil({ conectado = false }) {
     if (conectado) return <PerfilConectado />;
-    return <PerfilLocal />;
+    return <FormularioPerfil sesion={obtenerSesion()} />;
 }
 
 function PerfilConectado() {
-    const { usuario } = useSesionConectada();
+    const consulta = useConsultaConectada(true, obtenerPerfilApi);
+    if (consulta.datos) return <FormularioPerfil sesion={consulta.datos} conectado />;
     return <main className="container my-5">
         <h1>Mi perfil conectado</h1>
-        <dl><dt>Nombre</dt><dd>{usuario.nombre}</dd><dt>Correo</dt><dd>{usuario.correo}</dd>
-            <dt>Rol</dt><dd>{usuario.rol}</dd></dl>
-        <p>La edición del perfil conectado se incorporará en una etapa posterior.</p>
+        <EstadoCatalogoAdmin consulta={consulta} />
     </main>;
 }
 
-function PerfilLocal() {
-
-    const sesion = obtenerSesion();
+function FormularioPerfil({ sesion, conectado = false }) {
+    const escritura = useEscrituraConectada();
+    const { usuario, restaurarSesion } = useSesionConectada();
 
     const [nombre, setNombre] = useState(sesion?.nombre || '');
     const [apellido, setApellido] = useState(sesion?.apellido || '');
@@ -46,17 +49,14 @@ function PerfilLocal() {
 
         evento.preventDefault();
 
-        await actualizarUsuarioPerfil(
-            sesion.id,
-            {
-                nombre,
-                apellido,
-                correo,
-                telefono,
-                comuna,
-                direccion
-            }
-        );
+        const datos = { nombre, apellido, correo, telefono, comuna, direccion };
+        setMensaje('');
+        if (conectado) {
+            if (!await escritura.ejecutar(editarPerfilApi, datos)) return;
+            await restaurarSesion({ forzar: true });
+        } else {
+            await actualizarUsuarioPerfil(sesion.id, datos);
+        }
 
         setMensaje('Perfil actualizado correctamente.');
     }
@@ -73,13 +73,17 @@ function PerfilLocal() {
                         <div className="card-body p-4">
 
                             <h1 className="mb-1">
-                                Mi perfil
+                                {conectado ? 'Mi perfil conectado' : 'Mi perfil'}
                             </h1>
 
                             <p className="text-muted mb-4">
                                 Actualiza tus datos personales y de entrega.
                             </p>
 
+                            {conectado && <>
+                                <p>Rol: {usuario.rol}</p>
+                                <EstadoEscrituraConectada escritura={escritura} />
+                            </>}
                             {mensaje && (
 
                                 <div className="alert alert-success">
@@ -119,7 +123,7 @@ function PerfilLocal() {
                                             className="form-control"
                                             value={apellido}
                                             onChange={(e) => setApellido(e.target.value)}
-                                            required
+                                            required={!conectado}
                                         />
 
                                     </div>
@@ -192,6 +196,7 @@ function PerfilLocal() {
 
                                 <button
                                     type="submit"
+                                    disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                                     className="btn btn-danger"
                                 >
                                     Guardar cambios

@@ -22,9 +22,13 @@ const producto = { id: ID, codigo: 'TEST-ACE001', nombre: 'Aceite de prueba', pr
 const orden = (id, cantidad = 1) => ({ id, estado: 'PROCESANDO', total: 27500,
     productos: [{ productoId: ID, nombre: producto.nombre, cantidad }] });
 const solicitud = { productos: [{ productoId: ID, cantidad: 1 }] };
+const datosEntrega = { nombre: 'Cliente de prueba', correo: 'cliente@example.test', telefono: '900000000',
+    comuna: 'Santiago', direccion: 'Calle de prueba 10' };
+const tipoEntrega = 'Envío estándar';
+const solicitudConEntrega = { ...solicitud, entrega: { ...datosEntrega, tipo: tipoEntrega } };
 const entrega = {
     pathname: RUTA_COMPRA_CONECTADA,
-    state: { compradorId: COMPRADOR, datosCliente: { nombre: 'Cliente de prueba' }, tipoEntrega: 'Envío estándar' }
+    state: { compradorId: COMPRADOR, datosCliente: datosEntrega, tipoEntrega }
 };
 
 function guardarCarrito() {
@@ -174,7 +178,7 @@ describe('Compra conectada', () => {
         expect(posts(fetchSimulado)).toEqual([]);
     });
 
-    it('mantiene el formulario y muestra una solicitud sin precios ni datos de entrega', async () => {
+    it('mantiene el formulario y muestra una vista previa sin precios ni datos personales', async () => {
         guardarCarrito();
         const fetchSimulado = simulacionApi();
         renderizar(RUTA_CHECKOUT_CONECTADO);
@@ -224,7 +228,7 @@ describe('Compra conectada', () => {
         expect(id).toMatch(/^[0-9a-f]{24}$/);
         expect(peticion.headers.Authorization).toBe(`Bearer ${TOKEN}`);
         expect(intentoAlEnviar).toEqual({ id, cuerpo: peticion.body, compradorId: COMPRADOR });
-        expect(JSON.parse(peticion.body)).toEqual(solicitud);
+        expect(JSON.parse(peticion.body)).toEqual(solicitudConEntrega);
         expect(JSON.parse(localStorage.getItem(CLAVE)).carrito.length).toBe(1);
         responder(Response.json(orden(id), { status: 201 }));
 

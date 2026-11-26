@@ -99,6 +99,12 @@ export default function OrdenesConectadas({ comprobante = false }) {
                     <ul>{actual.datos.productos.map((linea) => (
                         <li key={linea.productoId}>{linea.nombre} × {linea.cantidad} · {pesos.format(linea.subtotal)}</li>
                     ))}</ul>
+                    {usuario?.rol !== 'VENDEDOR' && actual.datos.entrega && <section aria-label="Datos de entrega" className="mb-3">
+                        <h3 className="h6">Datos de entrega</h3>
+                        <p className="mb-1">{actual.datos.entrega.tipo} · {actual.datos.entrega.nombre}</p>
+                        <p className="mb-1">{actual.datos.entrega.direccion}, {actual.datos.entrega.comuna}</p>
+                        <p className="mb-0">{actual.datos.entrega.correo} · {actual.datos.entrega.telefono}</p>
+                    </section>}
                     <div><Link className="btn btn-outline-primary" to={`${rutaDetalle}/boleta`}>Ver comprobante</Link></div>
                 </section>
             )}

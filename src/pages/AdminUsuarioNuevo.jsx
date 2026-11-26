@@ -8,7 +8,12 @@ import {
 
 import { useBaseAdmin } from '../context/catalogo';
 
-export default function AdminUsuarioNuevo() {
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { crearClienteApi } from '../services/operacionesApi.js';
+
+export default function AdminUsuarioNuevo({ conectado = false }) {
+    const escritura = useEscrituraConectada();
     const baseAdmin = useBaseAdmin();
 
     const navigate = useNavigate();
@@ -42,6 +47,14 @@ export default function AdminUsuarioNuevo() {
         evento.preventDefault();
 
         setMensajeError('');
+
+        if (conectado) {
+            const { password, ...datos } = formulario;
+            if (await escritura.ejecutar(crearClienteApi, { datos, contrasena: password })) {
+                navigate(`${baseAdmin}/usuarios`);
+            }
+            return;
+        }
 
         const resultado =
             await registrarUsuario({
@@ -101,6 +114,7 @@ export default function AdminUsuarioNuevo() {
 
                 <div className="card-body">
 
+                    {conectado && <EstadoEscrituraConectada escritura={escritura} />}
                     {mensajeError && (
 
                         <div className="alert alert-danger">
@@ -199,8 +213,8 @@ export default function AdminUsuarioNuevo() {
                                     className="form-control"
                                     value={formulario.password}
                                     onChange={manejarCambio}
-                                    minLength="4"
-                                    maxLength="10"
+                                    minLength={conectado ? 8 : 4}
+                                    maxLength={conectado ? 72 : 10}
                                     required
                                 />
 
@@ -276,6 +290,7 @@ export default function AdminUsuarioNuevo() {
                         <button
                             type="submit"
                             className="btn btn-success mt-4"
+                            disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                         >
                             Crear usuario
                         </button>

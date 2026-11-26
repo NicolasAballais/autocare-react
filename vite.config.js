@@ -25,6 +25,7 @@ export default defineConfig(({ command, isPreview, mode }) => {
   const modoPrueba = ENVIO_ORDENES_HABILITADO && desarrollo
   const pruebaAuth = AUTH_CONECTADA_HABILITADA && desarrollo
   const admin = cargarConfiguracionAdmin(process.env, desarrollo)
+  const pruebaGestion = desarrollo && process.env.AUTOCARE_GESTION_PRUEBA === '1'
   return {
     plugins: [react()],
     resolve: railway ? { alias: [{
@@ -33,7 +34,7 @@ export default defineConfig(({ command, isPreview, mode }) => {
     }] } : undefined,
     define: { __AUTOCARE_RAILWAY__: JSON.stringify(railway),
       __AUTOCARE_PRUEBA_ORDENES__: JSON.stringify(modoPrueba), __AUTOCARE_PRUEBA_AUTH__: JSON.stringify(pruebaAuth),
-      __AUTOCARE_PRUEBA_ADMIN__: JSON.stringify(admin) },
+      __AUTOCARE_PRUEBA_ADMIN__: JSON.stringify(admin), __AUTOCARE_PRUEBA_GESTION__: JSON.stringify(pruebaGestion) },
     server: {
       proxy: {
         '/api': {
@@ -48,6 +49,10 @@ export default defineConfig(({ command, isPreview, mode }) => {
             const esRutaAuth = RUTAS_POST_AUTH.includes(peticion.url)
             const admitePost = conexionLocal && ((modoPrueba && esRutaOrdenes) || (pruebaAuth && esRutaAuth))
             if (method === 'POST' && admitePost) return
+
+            const altaGestion = method === 'POST' && /^\/api\/v1\/(usuarios|incidencias|contacto)$/.test(url)
+            const cambioGestion = method === 'PUT' && /^\/api\/v1\/(usuarios\/([0-9a-f]{24}|me\/perfil)|ordenes\/[0-9a-f]{24}\/envio|incidencias\/[0-9a-f]{24}\/resolucion)$/.test(url)
+            if (conexionLocal && pruebaGestion && (altaGestion || cambioGestion)) return
 
             const rutaCatalogo = /^\/api\/v1\/(productos|categorias)(?:\/([0-9a-f]{24}))?$/.exec(url)
             let estado = 405
@@ -68,7 +73,7 @@ export default defineConfig(({ command, isPreview, mode }) => {
             respuesta.writeHead(estado, {
               ...(estado === 405 && { Allow: admitePost ? 'GET, HEAD, POST' : 'GET, HEAD' }),
               'Content-Type': 'application/json; charset=utf-8',
-            }).end(JSON.stringify({ detail: detalle[estado] ?? ((rutaCatalogo || esRutaOrdenes || esRutaAuth) && method !== 'GET'
+            }).end(JSON.stringify({ detail: detalle[estado] ?? ((rutaCatalogo || esRutaOrdenes || esRutaAuth || altaGestion || cambioGestion) && method !== 'GET'
               ? 'Esta operación está deshabilitada para las pruebas actuales.'
               : 'Método no habilitado para esta ruta.') }))
             // Devolver la ruta indica a Vite que omita el reenvío.

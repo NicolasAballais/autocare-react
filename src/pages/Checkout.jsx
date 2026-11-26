@@ -138,7 +138,7 @@ export default function Checkout({ conectado = false }) {
                 {conectado ? 'Checkout conectado' : 'Checkout'}
             </h1>
 
-            {conectado && <p>Los datos de entrega se usan en esta sesión. Spring Boot recibe los productos y cantidades.</p>}
+            {conectado && <p>Spring Boot guardará los datos de entrega junto con tu orden.</p>}
 
 
             {errorEntrega && <p className="alert alert-danger" role="alert">{errorEntrega}</p>}
@@ -187,6 +187,7 @@ export default function Checkout({ conectado = false }) {
                                             type="text"
                                             className="form-control"
                                             value={datosCliente.nombre}
+                                            maxLength={conectado ? 150 : undefined}
                                             onChange={manejarCambio}
                                             required
                                         />
@@ -209,6 +210,7 @@ export default function Checkout({ conectado = false }) {
                                             type="email"
                                             className="form-control"
                                             value={datosCliente.correo}
+                                            maxLength={conectado ? 254 : undefined}
                                             onChange={manejarCambio}
                                             required
                                         />
@@ -231,6 +233,7 @@ export default function Checkout({ conectado = false }) {
                                             type="text"
                                             className="form-control"
                                             value={datosCliente.telefono}
+                                            maxLength={conectado ? 30 : undefined}
                                             onChange={manejarCambio}
                                             required
                                         />
@@ -253,6 +256,7 @@ export default function Checkout({ conectado = false }) {
                                             type="text"
                                             className="form-control"
                                             value={datosCliente.comuna}
+                                            maxLength={conectado ? 100 : undefined}
                                             onChange={manejarCambio}
                                             required
                                         />
@@ -275,6 +279,7 @@ export default function Checkout({ conectado = false }) {
                                             type="text"
                                             className="form-control"
                                             value={datosCliente.direccion}
+                                            maxLength={conectado ? 300 : undefined}
                                             onChange={manejarCambio}
                                             required
                                         />

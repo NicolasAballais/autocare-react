@@ -27,9 +27,10 @@ const apiPrueba = crearAdminCatalogoApi({
 });
 const json = (datos, status = 200) => Response.json(datos, { status });
 
-function apiSimulada({ productos = [producto, productoOriginal], categorias = [categoria, categoriaOriginal], responder } = {}) {
+function apiSimulada({ productos = [producto, productoOriginal], categorias = [categoria, categoriaOriginal], responder, lecturas = {} } = {}) {
     const catalogo = { productos: [...productos], categorias: [...categorias] };
     return spyOn(window, 'fetch').and.callFake(async (url, opciones) => {
+        if (opciones.method === 'GET' && Object.hasOwn(lecturas, url)) return json(lecturas[url]);
         const [, recurso, clave] = /^\/api\/v1\/(productos|categorias)(?:\/([^/]+))?$/.exec(url) ?? [];
         if (!recurso) throw new Error('Ruta inesperada en el catálogo simulado.');
         const { method } = opciones;
@@ -119,14 +120,21 @@ describe('Administración del catálogo conectado', () => {
         expect(peticiones).toHaveBeenCalledWith('/api/v1/categorias', jasmine.objectContaining({ method: 'GET' }));
     });
 
-    it('muestra conteos remotos y marca las demás tarjetas como locales', async () => {
-        apiSimulada({ productos: [producto], categorias: [categoria, categoriaOriginal] });
+    it('muestra conteos de Spring en las tarjetas conectadas', async () => {
+        apiSimulada({ productos: [producto], categorias: [categoria, categoriaOriginal], lecturas: {
+            '/api/v1/ordenes': [{ estado: 'PROCESANDO' }],
+            '/api/v1/usuarios': [{}, {}, {}],
+            '/api/v1/incidencias': [{ estado: 'PENDIENTE' }]
+        } });
         montar(RUTA_ADMIN_CONECTADA);
         await screen.findByRole('heading', { name: 'Panel de Administración' });
         const tarjeta = (nombre) => screen.getByRole('heading', { name: nombre }).closest('.card');
         await within(tarjeta('Productos')).findByText('1');
         expect(within(tarjeta('Categorías')).getByText('2')).toBeTruthy();
-        expect(screen.getAllByText('· Simulación local').length).toBe(5);
+        expect(await within(tarjeta('Órdenes')).findByText('1')).toBeTruthy();
+        expect(await within(tarjeta('Usuarios')).findByText('3')).toBeTruthy();
+        expect(await within(tarjeta('Incidencias')).findByText('1')).toBeTruthy();
+        expect(screen.queryByText('· Simulación local')).toBeNull();
     });
 
     it('muestra errores de lectura, permite reintentar y conserva el origen remoto', async () => {

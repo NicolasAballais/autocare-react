@@ -11,22 +11,28 @@ export function generarClaveOrden() {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-export function prepararSolicitudOrden(carrito) {
+const CAMPOS_ENTREGA = ['nombre', 'correo', 'telefono', 'comuna', 'direccion', 'tipo'];
+
+export function prepararSolicitudOrden(carrito, entrega) {
     const productos = carrito.map(({ id, cantidad }) => ({ productoId: normalizarIdProducto(id), cantidad }));
     if (!productos.length || productos.some(({ productoId, cantidad }) =>
         !esObjectId(productoId) || !Number.isInteger(cantidad) || cantidad < 1 || cantidad > 2147483647
     ) || new Set(productos.map(({ productoId }) => productoId)).size !== productos.length) {
         throw new Error('Revisa los productos y las cantidades de la orden.');
     }
-    return { productos };
+    return entrega ? { productos, entrega } : { productos };
 }
 
 export function solicitudDelIntento(intento) {
     if (!esObjectId(intento?.id) || typeof intento.cuerpo !== 'string') return null;
     try {
         const datos = JSON.parse(intento.cuerpo);
-        if (Object.keys(datos).length !== 1 || !Array.isArray(datos.productos) || datos.productos.some((linea) =>
+        if (Object.keys(datos).some((campo) => !['productos', 'entrega'].includes(campo)) ||
+            !Array.isArray(datos.productos) || datos.productos.some((linea) =>
             !linea || Object.keys(linea).length !== 2 || !esObjectId(linea.productoId))) return null;
+        if (Object.hasOwn(datos, 'entrega') && (!datos.entrega ||
+            Object.keys(datos.entrega).length !== CAMPOS_ENTREGA.length ||
+            CAMPOS_ENTREGA.some((campo) => typeof datos.entrega[campo] !== 'string' || !datos.entrega[campo].trim()))) return null;
         prepararSolicitudOrden(datos.productos.map(({ productoId, cantidad }) => ({ id: productoId, cantidad })));
         return datos;
     } catch {

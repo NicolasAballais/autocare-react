@@ -9,13 +9,24 @@ import {
 
 import { useBaseAdmin } from '../context/catalogo';
 
-export default function AdminUsuarioEditar() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useConsultaConectada, useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { editarClienteApi, obtenerClienteApi } from '../services/operacionesApi.js';
+
+export default function AdminUsuarioEditar({ conectado = false }) {
+    const { id } = useParams();
+    const consulta = useConsultaConectada(conectado, obtenerClienteApi, id);
+    const usuario = conectado ? consulta.datos : obtenerUsuarioPorId(id);
+    if (conectado && !usuario) return <main className="container my-5"><EstadoCatalogoAdmin consulta={consulta} /></main>;
+    return <FormularioEdicion key={id} usuario={usuario} conectado={conectado} />;
+}
+
+function FormularioEdicion({ usuario, conectado }) {
+    const escritura = useEscrituraConectada();
     const baseAdmin = useBaseAdmin();
 
-    const { id } = useParams();
     const navigate = useNavigate();
-
-    const usuario = obtenerUsuarioPorId(id);
 
     const [mensajeError, setMensajeError] = useState('');
 
@@ -29,7 +40,7 @@ export default function AdminUsuarioEditar() {
     });
 
 
-    if (!usuario || usuario.rol !== 'cliente') {
+    if (!usuario || (!conectado && usuario.rol !== 'cliente')) {
 
         return (
             <main className="container my-5">
@@ -66,6 +77,13 @@ export default function AdminUsuarioEditar() {
         evento.preventDefault();
 
         setMensajeError('');
+
+        if (conectado) {
+            if (await escritura.ejecutar(editarClienteApi, usuario.id, formulario)) {
+                navigate(`${baseAdmin}/usuarios/${usuario.id}`);
+            }
+            return;
+        }
 
         const resultado =
             await actualizarUsuarioAdmin(
@@ -119,6 +137,7 @@ export default function AdminUsuarioEditar() {
 
                 <div className="card-body">
 
+                    {conectado && <EstadoEscrituraConectada escritura={escritura} />}
                     {mensajeError && (
 
                         <div className="alert alert-danger">
@@ -162,7 +181,7 @@ export default function AdminUsuarioEditar() {
                                     name="apellido"
                                     value={formulario.apellido}
                                     onChange={manejarCambio}
-                                    required
+                                    required={!conectado}
                                 />
 
                             </div>
@@ -242,6 +261,7 @@ export default function AdminUsuarioEditar() {
                         <button
                             type="submit"
                             className="btn btn-primary"
+                            disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                         >
                             Guardar cambios
                         </button>

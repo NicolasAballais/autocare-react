@@ -19,7 +19,7 @@ Vite permite los POST de autenticación únicamente en desarrollo y desde loopba
 
 ## Administración conectada del catálogo
 
-Un usuario ADMIN entra en `/catalogo-conectado/admin`. Las tarjetas Productos y Categorías consultan Spring Boot. Usuarios, notificaciones, incidencias, reportes y la gestión de órdenes mantienen sus datos de simulación local. El enlace **Ver órdenes conectadas** abre la consulta existente de Spring Boot.
+Un usuario ADMIN entra en `/catalogo-conectado/admin`. Las tarjetas de administración consultan Spring Boot. Las rutas fuera de `/catalogo-conectado` conservan sus datos de simulación local. El enlace **Ver órdenes conectadas** abre la consulta existente de Spring Boot.
 
 El modo predeterminado permite consultar el catálogo desde el panel. Para autorizar escrituras se requiere el servidor de desarrollo Vite en loopback y `AUTOCARE_ADMIN_PRUEBA=1` en su terminal. Las ediciones y eliminaciones requieren además los ObjectId exactos de registros temporales recién creados. El cliente y el proxy consultan el registro vigente antes de modificarlo o eliminarlo. Un producto temporal usa un código `TEST-` y referencia una categoría de nombre `TEST-`. Las autorizaciones de ADMIN se validan en Spring Security.
 
@@ -52,6 +52,18 @@ El modo predeterminado permite consultar el catálogo desde el panel. Para autor
    ```
 
 Spring Boot acepta un `PUT` completo y carece de edición condicional por versión. El cliente verifica si el registro cambió desde que se abrió el formulario. Realiza la prueba temporal desde una sola sesión administrativa para evitar ediciones simultáneas de esos registros. El proxy comprueba método, ruta e ID, y el cliente React verifica también el contenido del formulario. La prueba se realiza desde el panel.
+
+## Gestión conectada
+
+Las rutas bajo `/catalogo-conectado/admin` usan Spring Boot para consultar y gestionar clientes, órdenes e incidencias. Stock crítico y reportes se calculan con los listados REST existentes. Un CLIENTE puede editar su perfil y reportar incidencias desde su sesión. El formulario conectado de contacto requiere sesión. Las rutas del simulador conservan sus datos de navegador.
+
+Para probar con datos ficticios, inicia Spring Boot con `catalogo-local` y una base MongoDB local aislada. Inicia Vite con `npm.cmd run dev -- --host 127.0.0.1`. Para las escrituras de esta sección, usa `$env:AUTOCARE_GESTION_PRUEBA = '1'` antes de iniciar Vite. Autenticación, creación de compras y CRUD de productos y categorías conservan sus controles de prueba propios. La lectura de registros existentes funciona con `AUTOCARE_GESTION_PRUEBA` apagada.
+
+- Como CLIENTE, completa el checkout de prueba y revisa el despacho en el detalle de la orden. Desde **Mis incidencias**, crea un caso con esa orden y revisa su estado. Desde el nombre de la cuenta, abre el perfil.
+- Como ADMIN, abre **Administración** para crear o editar clientes, consultar sus órdenes, marcar un despacho enviado, resolver incidencias y ver avisos y reportes.
+- En otra sesión, comprueba que VENDEDOR puede consultar órdenes y productos. La API reserva los datos de entrega para el comprador y ADMIN.
+
+El navegador conserva el cuerpo del intento de compra en el carrito de la cuenta para que un reintento use la misma clave y entrega aunque se recargue la página. Tras confirmar, conserva el resumen de la orden y descarta los datos de entrega del intento.
 
 ## Preparar el frontend en Railway
 

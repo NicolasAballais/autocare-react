@@ -4,12 +4,30 @@ import { obtenerClientes } from '../services/usuariosService';
 import { obtenerIncidencias } from '../services/incidenciasService';
 
 
-export default function AdminReportes() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaConectada } from '../hooks/useOperacionesConectadas.js';
+import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
+import { listarProductosAdmin } from '../services/adminCatalogoApi.js';
+import { listarOrdenesApi } from '../services/ordenesApi.js';
+import { formatearRegistro, listarClientesApi, listarIncidenciasApi } from '../services/operacionesApi.js';
 
-    const productos = obtenerProductos();
-    const ordenes = obtenerOrdenes();
-    const clientes = obtenerClientes();
-    const incidencias = obtenerIncidencias();
+export default function AdminReportes({ conectado = false }) {
+    const catalogo = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
+    const compras = useConsultaConectada(conectado, listarOrdenesApi);
+    const cuentas = useConsultaConectada(conectado, listarClientesApi);
+    const posventa = useConsultaConectada(conectado, listarIncidenciasApi);
+    const consultas = [catalogo, compras, cuentas, posventa];
+    if (conectado && consultas.some((consulta) => !consulta.datos)) return (
+        <main className="container my-5">
+            <h1>Reportes</h1>
+            {consultas.map((consulta, indice) => <EstadoCatalogoAdmin key={indice} consulta={consulta} />)}
+        </main>
+    );
+
+    const productos = conectado ? catalogo.datos : obtenerProductos();
+    const ordenes = conectado ? compras.datos.map(formatearRegistro) : obtenerOrdenes();
+    const clientes = conectado ? cuentas.datos : obtenerClientes();
+    const incidencias = conectado ? posventa.datos.map(formatearRegistro) : obtenerIncidencias();
 
 
     const totalVentas = ordenes.reduce(
@@ -72,7 +90,7 @@ export default function AdminReportes() {
                             <i className="bi bi-cash-stack fs-2 text-success"></i>
 
                             <h5 className="mt-3">
-                                Ventas acumuladas
+                                {conectado ? 'Total de compras simuladas' : 'Ventas acumuladas'}
                             </h5>
 
                             <h3>
@@ -196,9 +214,9 @@ export default function AdminReportes() {
                                     <tr>
                                         <th>Orden</th>
                                         <th>Fecha</th>
-                                        <th>Cliente</th>
+                                        {!conectado && <th>Cliente</th>}
                                         <th>Total</th>
-                                        <th>Pago</th>
+                                        {!conectado && <th>Pago</th>}
                                         <th>Estado</th>
                                     </tr>
 
@@ -218,17 +236,13 @@ export default function AdminReportes() {
                                                 {orden.fecha}
                                             </td>
 
-                                            <td>
-                                                {orden.cliente?.nombre || 'Sin información'}
-                                            </td>
+                                            {!conectado && <td>{orden.cliente?.nombre || 'Sin información'}</td>}
 
                                             <td>
                                                 ${orden.total.toLocaleString('es-CL')}
                                             </td>
 
-                                            <td>
-                                                {orden.metodoPago || '-'}
-                                            </td>
+                                            {!conectado && <td>{orden.metodoPago || '-'}</td>}
 
                                             <td>
 

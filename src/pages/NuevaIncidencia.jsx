@@ -13,23 +13,37 @@ import {
     obtenerSesion
 } from '../services/usuariosService';
 
-export default function NuevaIncidencia() {
+import { useSesionConectada } from '../context/sesionConectada.js';
+import { RUTA_INCIDENCIAS_CONECTADAS } from '../context/catalogo.js';
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useConsultaConectada, useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { crearIncidenciaApi } from '../services/operacionesApi.js';
+import { listarOrdenesApi } from '../services/ordenesApi.js';
+
+export default function NuevaIncidencia({ conectado = false }) {
 
     const navigate = useNavigate();
 
-    const sesion = obtenerSesion();
-
-    const ordenes = sesion
-        ? obtenerOrdenesUsuario(sesion)
-        : [];
+    const { usuario } = useSesionConectada();
+    const consulta = useConsultaConectada(conectado, listarOrdenesApi);
+    const escritura = useEscrituraConectada();
+    const sesion = conectado ? usuario : obtenerSesion();
+    const rutaIncidencias = conectado ? RUTA_INCIDENCIAS_CONECTADAS : '/incidencias';
+    const ordenes = conectado ? consulta.datos ?? [] : sesion ? obtenerOrdenesUsuario(sesion) : [];
 
     const [ordenId, setOrdenId] = useState('');
     const [asunto, setAsunto] = useState('');
     const [descripcion, setDescripcion] = useState('');
 
-    function manejarEnvio(evento) {
+    async function manejarEnvio(evento) {
 
         evento.preventDefault();
+
+        if (conectado) {
+            if (await escritura.ejecutar(crearIncidenciaApi, { ordenId, asunto, descripcion })) navigate(rutaIncidencias);
+            return;
+        }
 
         guardarIncidencia({
             ordenId: Number(ordenId),
@@ -37,7 +51,7 @@ export default function NuevaIncidencia() {
             descripcion
         });
 
-        navigate('/incidencias');
+        navigate(rutaIncidencias);
     }
 
     if (!sesion) {
@@ -75,7 +89,8 @@ export default function NuevaIncidencia() {
 
             </div>
 
-            <div className="card shadow-sm">
+            {conectado && <><EstadoCatalogoAdmin consulta={consulta} /><EstadoEscrituraConectada escritura={escritura} /></>}
+            {(!conectado || consulta.datos) && <div className="card shadow-sm">
 
                 <div className="card-body">
 
@@ -135,6 +150,7 @@ export default function NuevaIncidencia() {
                                     type="text"
                                     className="form-control"
                                     value={asunto}
+                                    maxLength={conectado ? 150 : undefined}
                                     onChange={(e) =>
                                         setAsunto(e.target.value)
                                     }
@@ -154,6 +170,7 @@ export default function NuevaIncidencia() {
                                     className="form-control"
                                     rows="5"
                                     value={descripcion}
+                                    maxLength={conectado ? 2000 : undefined}
                                     onChange={(e) =>
                                         setDescripcion(e.target.value)
                                     }
@@ -165,6 +182,7 @@ export default function NuevaIncidencia() {
 
                             <button
                                 type="submit"
+                                disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                                 className="btn btn-danger"
                             >
                                 Enviar incidencia
@@ -176,8 +194,7 @@ export default function NuevaIncidencia() {
 
                 </div>
 
-            </div>
-
+            </div>}
         </main>
     );
 }

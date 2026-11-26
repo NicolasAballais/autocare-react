@@ -2,7 +2,7 @@ import { Link, useMatch, useNavigate } from 'react-router-dom';
 import { obtenerSesion, cerrarSesion } from '../services/usuariosService';
 import { useCarrito } from '../context/CarritoContext';
 import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO,
-    RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO } from '../context/catalogo';
+    RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO, RUTA_INCIDENCIAS_CONECTADAS, RUTA_CONTACTO_CONECTADO } from '../context/catalogo';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { useSesionConectada } from '../context/sesionConectada';
 
@@ -99,11 +99,11 @@ export default function Navbar() {
                             </Link>
                         </li>
 
-                        {sesion?.rol === 'cliente' && (
+                        {['cliente', 'CLIENTE'].includes(sesion?.rol) && (
                             <li className="nav-item">
                                 <Link
                                     className="nav-link"
-                                    to="/incidencias"
+                                    to={conectado ? RUTA_INCIDENCIAS_CONECTADAS : '/incidencias'}
                                 >
                                     Mis incidencias
                                 </Link>
@@ -138,12 +138,12 @@ export default function Navbar() {
                                 </Link>
                             </li>
 
-                            <li className="nav-item">
-                                <Link className="nav-link" to="/contacto">
+                        </>}
+                        {!vendedor && <li className="nav-item">
+                                <Link className="nav-link" to={conectado ? RUTA_CONTACTO_CONECTADO : '/contacto'}>
                                     Contacto
                                 </Link>
-                            </li>
-                        </>}
+                            </li>}
 
                     </ul>
 

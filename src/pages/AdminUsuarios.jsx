@@ -4,10 +4,15 @@ import { obtenerClientes } from '../services/usuariosService';
 
 import { useBaseAdmin } from '../context/catalogo';
 
-export default function AdminUsuarios() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaConectada } from '../hooks/useOperacionesConectadas.js';
+import { listarClientesApi } from '../services/operacionesApi.js';
+
+export default function AdminUsuarios({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
 
-    const clientes = obtenerClientes();
+    const consulta = useConsultaConectada(conectado, listarClientesApi);
+    const clientes = conectado ? consulta.datos ?? [] : obtenerClientes();
 
 
     return (
@@ -22,7 +27,7 @@ export default function AdminUsuarios() {
                     </h1>
 
                     <p className="text-muted mb-0">
-                        Clientes registrados: {clientes.length}
+                        Clientes registrados: {conectado && !consulta.datos ? '—' : clientes.length}
                     </p>
 
                 </div>
@@ -39,7 +44,8 @@ export default function AdminUsuarios() {
             </div>
 
 
-            {clientes.length === 0 ? (
+            {conectado && <EstadoCatalogoAdmin consulta={consulta} />}
+            {(!conectado || consulta.datos) && (clientes.length === 0 ? (
 
                 <div className="alert alert-info">
                     No existen clientes registrados.
@@ -130,7 +136,7 @@ export default function AdminUsuarios() {
 
                 </div>
 
-            )}
+            ))}
 
         </main>
     );

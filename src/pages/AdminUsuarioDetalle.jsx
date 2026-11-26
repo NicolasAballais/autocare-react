@@ -8,16 +8,23 @@ import {
     obtenerOrdenesUsuario
 } from '../services/ordenesService';
 
-import { useBaseAdmin } from '../context/catalogo';
+import { RUTA_ORDENES_CONECTADAS, useBaseAdmin } from '../context/catalogo';
 
-export default function AdminUsuarioDetalle() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaConectada } from '../hooks/useOperacionesConectadas.js';
+import { formatearRegistro, listarOrdenesClienteApi, obtenerClienteApi } from '../services/operacionesApi.js';
+
+export default function AdminUsuarioDetalle({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
 
     const { id } = useParams();
 
-    const usuario = obtenerUsuarioPorId(id);
+    const cliente = useConsultaConectada(conectado, obtenerClienteApi, id);
+    const historial = useConsultaConectada(conectado, listarOrdenesClienteApi, id);
+    const usuario = conectado ? cliente.datos : obtenerUsuarioPorId(id);
 
-    if (!usuario || usuario.rol !== 'cliente') {
+    if (conectado && !usuario) return <main className="container my-5"><EstadoCatalogoAdmin consulta={cliente} /></main>;
+    if (!usuario || (!conectado && usuario.rol !== 'cliente')) {
 
         return (
             <main className="container my-5">
@@ -37,8 +44,7 @@ export default function AdminUsuarioDetalle() {
         );
     }
 
-    const ordenes =
-        obtenerOrdenesUsuario(usuario);
+    const ordenes = conectado ? (historial.datos ?? []).map(formatearRegistro) : obtenerOrdenesUsuario(usuario);
 
     return (
         <main className="container my-5">
@@ -162,7 +168,8 @@ export default function AdminUsuarioDetalle() {
                     </div>
 
 
-                    {ordenes.length === 0 ? (
+                    {conectado && <EstadoCatalogoAdmin consulta={historial} />}
+                    {(!conectado || historial.datos) && (ordenes.length === 0 ? (
 
                         <div className="alert alert-info mb-0">
 
@@ -182,7 +189,7 @@ export default function AdminUsuarioDetalle() {
                                         <th>Orden</th>
                                         <th>Fecha</th>
                                         <th>Total</th>
-                                        <th>Pago</th>
+                                        {!conectado && <th>Pago</th>}
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -207,9 +214,7 @@ export default function AdminUsuarioDetalle() {
                                                 ${orden.total.toLocaleString('es-CL')}
                                             </td>
 
-                                            <td>
-                                                {orden.metodoPago || '-'}
-                                            </td>
+                                            {!conectado && <td>{orden.metodoPago || '-'}</td>}
 
                                             <td>
 
@@ -228,7 +233,7 @@ export default function AdminUsuarioDetalle() {
                                             <td>
 
                                                 <Link
-                                                    to={`/ordenes/${orden.id}`}
+                                                    to={`${conectado ? RUTA_ORDENES_CONECTADAS : '/ordenes'}/${orden.id}`}
                                                     className="btn btn-outline-primary btn-sm"
                                                 >
                                                     Ver orden
@@ -246,7 +251,7 @@ export default function AdminUsuarioDetalle() {
 
                         </div>
 
-                    )}
+                    ))}
 
                 </div>
 

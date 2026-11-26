@@ -4,9 +4,17 @@ import {
     actualizarEstadoOrden
 } from '../services/ordenesService';
 
-export default function AdminOrdenes() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useConsultaConectada, useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { formatearRegistro, marcarOrdenEnviadaApi } from '../services/operacionesApi.js';
+import { listarOrdenesApi } from '../services/ordenesApi.js';
+import { RUTA_ORDENES_CONECTADAS } from '../context/catalogo.js';
 
-    const ordenes = obtenerOrdenes();
+export default function AdminOrdenes({ conectado = false }) {
+    const consulta = useConsultaConectada(conectado, listarOrdenesApi);
+    const escritura = useEscrituraConectada();
+    const ordenes = conectado ? (consulta.datos ?? []).map(formatearRegistro) : obtenerOrdenes();
 
     const formatoPrecio = new Intl.NumberFormat('es-CL', {
         style: 'currency',
@@ -30,13 +38,18 @@ export default function AdminOrdenes() {
         }
     };
 
-    const marcarComoEnviado = (orden) => {
+    const marcarComoEnviado = async (orden) => {
 
         const confirmar = window.confirm(
             `¿Deseas marcar la orden #${orden.id} como Enviado?`
         );
 
         if (!confirmar) {
+            return;
+        }
+
+        if (conectado) {
+            if (await escritura.ejecutar(marcarOrdenEnviadaApi, orden.id)) consulta.recargar();
             return;
         }
 
@@ -58,12 +71,13 @@ export default function AdminOrdenes() {
                 </h1>
 
                 <p className="text-muted mb-0">
-                    Órdenes registradas: {ordenes.length}
+                    Órdenes registradas: {conectado && !consulta.datos ? '—' : ordenes.length}
                 </p>
 
             </div>
 
-            {ordenes.length === 0 ? (
+            {conectado && <><EstadoCatalogoAdmin consulta={consulta} /><EstadoEscrituraConectada escritura={escritura} /></>}
+            {(!conectado || consulta.datos) && (ordenes.length === 0 ? (
 
                 <div className="alert alert-secondary">
                     No existen órdenes registradas.
@@ -95,9 +109,7 @@ export default function AdminOrdenes() {
                                             Productos
                                         </th>
 
-                                        <th>
-                                            Método de pago
-                                        </th>
+                                        {!conectado && <th>Método de pago</th>}
 
                                         <th className="text-end">
                                             Total
@@ -133,9 +145,7 @@ export default function AdminOrdenes() {
                                                 {orden.productos.length}
                                             </td>
 
-                                            <td>
-                                                {orden.metodoPago}
-                                            </td>
+                                            {!conectado && <td>{orden.metodoPago}</td>}
 
                                             <td className="text-end fw-bold">
                                                 {
@@ -162,7 +172,7 @@ export default function AdminOrdenes() {
                                                 <div className="d-flex justify-content-center gap-2">
 
                                                     <Link
-                                                        to={`/ordenes/${orden.id}`}
+                                                        to={`${conectado ? RUTA_ORDENES_CONECTADAS : '/ordenes'}/${orden.id}`}
                                                         className="btn btn-outline-primary btn-sm"
                                                     >
                                                         Ver detalle
@@ -173,7 +183,8 @@ export default function AdminOrdenes() {
                                                         <button
                                                             type="button"
                                                             className="btn btn-outline-success btn-sm"
-                                                            onClick={() =>
+                                                            disabled={conectado && (!escritura.habilitada || escritura.procesando)}
+                                                        onClick={() =>
                                                                 marcarComoEnviado(
                                                                     orden
                                                                 )
@@ -202,7 +213,7 @@ export default function AdminOrdenes() {
 
                 </div>
 
-            )}
+            ))}
 
         </main>
     );

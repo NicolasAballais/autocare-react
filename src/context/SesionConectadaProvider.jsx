@@ -47,9 +47,9 @@ export default function SesionConectadaProvider({ children, demostracion = MODO_
         return identidad;
     }, [api]);
 
-    const restaurarSesion = useCallback(async () => {
+    const restaurarSesion = useCallback(async ({ forzar = false } = {}) => {
         const credencial = actual.current;
-        if (!credencial || usuarioActual.current) return;
+        if (!credencial || (!forzar && usuarioActual.current)) return;
         setError('');
         try {
             const identidad = await consultarIdentidad(credencial);

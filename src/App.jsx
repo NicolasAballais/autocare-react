@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
@@ -51,13 +51,12 @@ import CompraConectada from './pages/CompraConectada';
 import OrdenesConectadas from './pages/OrdenesConectadas';
 import { RUTA_ADMIN_CONECTADA, RUTA_CARRITO_CONECTADO, RUTA_CATALOGO_CONECTADO, RUTA_CHECKOUT_CONECTADO,
     RUTA_COMPRA_CONECTADA, RUTA_LOGIN_CONECTADO, RUTA_ORDENES_CONECTADAS, RUTA_PERFIL_CONECTADO,
-    RUTA_REGISTRO_CONECTADO } from './context/catalogo';
+    RUTA_REGISTRO_CONECTADO, RUTA_INCIDENCIAS_CONECTADAS, RUTA_CONTACTO_CONECTADO } from './context/catalogo';
 
 import { useSesionConectada } from './context/sesionConectada.js';
 import { crearAdminCatalogoApi } from './services/adminCatalogoApi.js';
 
 const ROLES_TIENDA = ['ADMIN', 'CLIENTE'];
-const PAGINAS_CATALOGO_ADMIN = [AdminPanel, AdminProductos, AdminProductoNuevo, AdminProductoEditar, AdminCategorias];
 const PAGINAS_ADMIN = [
     ['', AdminPanel], ['/productos', AdminProductos], ['/productos/nuevo', AdminProductoNuevo],
     ['/productos/editar/:id', AdminProductoEditar], ['/ordenes', AdminOrdenes],
@@ -97,11 +96,18 @@ function App() {
                         <Route path={RUTA_REGISTRO_CONECTADO} element={<Register conectado />} />
                     </Route>
                     <Route path={RUTA_PERFIL_CONECTADO}
-                        element={<RutaConectada roles={ROLES_TIENDA}><Perfil conectado /></RutaConectada>} />
+                        element={<RutaConectada roles={ROLES_TIENDA} porUsuario><Perfil conectado /></RutaConectada>} />
+                    <Route path={RUTA_CONTACTO_CONECTADO}
+                        element={<RutaConectada roles={ROLES_TIENDA} porUsuario><Contacto conectado /></RutaConectada>} />
                     <Route element={<RutaConectada />}>
                         <Route path={RUTA_ORDENES_CONECTADAS} element={<OrdenesConectadas />} />
                         <Route path={`${RUTA_ORDENES_CONECTADAS}/:id`} element={<OrdenesConectadas />} />
                         <Route path={`${RUTA_ORDENES_CONECTADAS}/:id/boleta`} element={<OrdenesConectadas comprobante />} />
+                    </Route>
+
+                    <Route element={<RutaConectada roles={['CLIENTE']} porUsuario />}>
+                        <Route path={RUTA_INCIDENCIAS_CONECTADAS} element={<Incidencias conectado />} />
+                        <Route path={`${RUTA_INCIDENCIAS_CONECTADAS}/nueva`} element={<NuevaIncidencia conectado />} />
                     </Route>
 
                     <Route path={RUTA_CATALOGO_CONECTADO} element={<CatalogoConectado />}>
@@ -139,16 +145,9 @@ function App() {
                         ))}
                     </>}
                     <Route element={<RutaConectada roles={['ADMIN']} porUsuario />}>
-                        {PAGINAS_ADMIN.filter(([, Pagina]) => !demostracion || PAGINAS_CATALOGO_ADMIN.includes(Pagina))
-                            .map(([ruta, Pagina]) => (
+                        {PAGINAS_ADMIN.map(([ruta, Pagina]) => (
                             <Route key={ruta} path={`${RUTA_ADMIN_CONECTADA}${ruta}`}
-                                element={PAGINAS_CATALOGO_ADMIN.includes(Pagina) ? <Pagina conectado cliente={clienteAdmin} /> : <>
-                                <p className="alert alert-info m-3">
-                                    Panel de demostración con datos locales.{' '}
-                                    <Link to={RUTA_ORDENES_CONECTADAS}>Ver órdenes de Spring Boot</Link>
-                                </p>
-                                <Pagina />
-                                </>} />
+                                element={<Pagina conectado cliente={clienteAdmin} />} />
                         ))}
                     </Route>
                     {!demostracion && <>

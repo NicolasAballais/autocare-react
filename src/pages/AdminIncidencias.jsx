@@ -4,17 +4,29 @@ import {
     actualizarEstadoIncidencia
 } from '../services/incidenciasService';
 
-export default function AdminIncidencias() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import EstadoEscrituraConectada from '../components/EstadoEscrituraConectada.jsx';
+import { useConsultaConectada, useEscrituraConectada } from '../hooks/useOperacionesConectadas.js';
+import { formatearRegistro, listarIncidenciasApi, resolverIncidenciaApi } from '../services/operacionesApi.js';
+import { RUTA_ORDENES_CONECTADAS } from '../context/catalogo.js';
 
-    const incidencias = obtenerIncidencias();
+export default function AdminIncidencias({ conectado = false }) {
+    const consulta = useConsultaConectada(conectado, listarIncidenciasApi);
+    const escritura = useEscrituraConectada();
+    const incidencias = conectado ? (consulta.datos ?? []).map(formatearRegistro) : obtenerIncidencias();
 
-    function marcarResuelta(id) {
+    async function marcarResuelta(id) {
 
         const confirmar = window.confirm(
             '¿Deseas marcar esta incidencia como resuelta?'
         );
 
         if (!confirmar) {
+            return;
+        }
+
+        if (conectado) {
+            if (await escritura.ejecutar(resolverIncidenciaApi, id)) consulta.recargar();
             return;
         }
 
@@ -36,12 +48,13 @@ export default function AdminIncidencias() {
                 </h1>
 
                 <p className="text-muted mb-0">
-                    Incidencias registradas: {incidencias.length}
+                    Incidencias registradas: {conectado && !consulta.datos ? '—' : incidencias.length}
                 </p>
 
             </div>
 
-            {incidencias.length === 0 ? (
+            {conectado && <><EstadoCatalogoAdmin consulta={consulta} /><EstadoEscrituraConectada escritura={escritura} /></>}
+            {(!conectado || consulta.datos) && (incidencias.length === 0 ? (
 
                 <div className="alert alert-info">
                     No existen incidencias registradas.
@@ -88,7 +101,7 @@ export default function AdminIncidencias() {
                                             <td>
 
                                                 <Link
-                                                    to={`/ordenes/${incidencia.ordenId}`}
+                                                    to={`${conectado ? RUTA_ORDENES_CONECTADAS : '/ordenes'}/${incidencia.ordenId}`}
                                                 >
                                                     #{incidencia.ordenId}
                                                 </Link>
@@ -123,6 +136,7 @@ export default function AdminIncidencias() {
 
                                                     <button
                                                         className="btn btn-outline-success btn-sm"
+                                                        disabled={conectado && (!escritura.habilitada || escritura.procesando)}
                                                         onClick={() =>
                                                             marcarResuelta(incidencia.id)
                                                         }
@@ -148,7 +162,7 @@ export default function AdminIncidencias() {
 
                 </div>
 
-            )}
+            ))}
 
         </main>
     );

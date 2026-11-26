@@ -3,10 +3,15 @@ import { obtenerProductos } from '../services/productosService';
 
 import { useBaseAdmin } from '../context/catalogo';
 
-export default function AdminNotificaciones() {
+import { EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
+import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
+import { listarProductosAdmin } from '../services/adminCatalogoApi.js';
+
+export default function AdminNotificaciones({ conectado = false }) {
     const baseAdmin = useBaseAdmin();
 
-    const productos = obtenerProductos();
+    const consulta = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
+    const productos = conectado ? consulta.datos ?? [] : obtenerProductos();
 
     const productosStockCritico = productos.filter(
         (producto) =>
@@ -28,7 +33,8 @@ export default function AdminNotificaciones() {
 
             </div>
 
-            <div className="card shadow-sm">
+            {conectado && <EstadoCatalogoAdmin consulta={consulta} />}
+            {(!conectado || consulta.datos) && <div className="card shadow-sm">
 
                 <div className="card-body">
 
@@ -106,8 +112,7 @@ export default function AdminNotificaciones() {
 
                 </div>
 
-            </div>
-
+            </div>}
         </main>
     );
 }
