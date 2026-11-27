@@ -1,5 +1,9 @@
 # AutoCarePro
 
+## Verificación automatizada
+
+Los comandos para Playwright visual y automático, Karma y los reportes EV3 están en la [guía de verificación](e2e/README.md).
+
 ## Autenticación conectada
 
 El catálogo de Spring Boot está disponible en `/catalogo-conectado`. Sus formularios de autenticación se encuentran en `/catalogo-conectado/login` y `/catalogo-conectado/registro`. La tienda simulada utiliza sus rutas y su sesión habituales.

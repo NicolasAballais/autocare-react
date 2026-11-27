@@ -1,4 +1,5 @@
 module.exports = function (config) {
+    const navegadorAislado = process.env.AUTOCARE_NAVEGADOR_AISLADO === '1';
 
     config.set({
 
@@ -11,8 +12,11 @@ module.exports = function (config) {
             {
                 pattern: "src/test/**/*.spec.jsx",
                 watched: false
-            }
+            },
+            { pattern: 'public/images/**/*', included: false, watched: false }
         ],
+
+        proxies: { '/images/': '/base/public/images/' },
 
         preprocessors: {
             "src/test/**/*.spec.jsx": [
@@ -36,6 +40,7 @@ module.exports = function (config) {
             module: {
 
                 rules: [
+                    { test: /\.css$/, type: 'asset/source' },
 
                     /*
                         Permite que Webpack resuelva imports
@@ -87,13 +92,11 @@ module.exports = function (config) {
                                         "istanbul",
                                         {
                                             include: [
-                                                "src/components/**/*.jsx",
-                                                "src/pages/**/*.jsx",
-                                                "src/services/**/*.js"
+                                                "src/**/*.{js,jsx}"
                                             ],
 
                                             exclude: [
-                                                "**/*.spec.jsx"
+                                                "src/test/**"
                                             ]
                                         }
                                     ]
@@ -120,7 +123,7 @@ module.exports = function (config) {
 
         coverageReporter: {
 
-            dir: "coverage",
+            dir: "coverage/karma",
 
             reporters: [
 
@@ -131,13 +134,19 @@ module.exports = function (config) {
 
                 {
                     type: "text-summary"
-                }
+                },
+                { type: "json", subdir: "." },
+                { type: "json-summary", subdir: "." }
             ]
         },
 
-        browsers: [
-            "ChromeHeadless"
-        ],
+        browsers: [navegadorAislado ? 'ChromeHeadlessAislado' : 'ChromeHeadless'],
+        customLaunchers: {
+            ChromeHeadlessAislado: {
+                base: 'ChromeHeadless',
+                flags: ['--no-sandbox', '--disable-gpu', '--disable-software-rasterizer']
+            }
+        },
 
         singleRun: true
 

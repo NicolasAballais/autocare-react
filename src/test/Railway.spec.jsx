@@ -259,4 +259,60 @@ describe('Demostración Railway', () => {
         expect(red).toHaveBeenCalledWith('/api/v1/contacto', jasmine.objectContaining({ method: 'POST' }));
         expect(localStorage.getItem('mensajesContactoAutoCare')).toBeNull();
     });
+
+    it('mantiene los datos de edición de un cliente ante correo duplicado y permite corregirlos', async () => {
+        let registro = { ...cliente, comuna: 'Santiago' };
+        let rechazar = true;
+        montar(RUTA_ADMIN_CONECTADA + '/usuarios/' + cliente.id + '/editar', { rol: 'ADMIN',
+            configuracion: { registro: false, escrituras: true },
+            lecturas: {
+                ['/api/v1/usuarios/' + cliente.id]: () => registro,
+                ['/api/v1/usuarios/' + cliente.id + '/ordenes']: [orden]
+            },
+            escritura: (_url, opciones) => {
+                if (rechazar) return Response.json({ detail: 'Ya existe una cuenta con ese correo.' }, { status: 409 });
+                registro = { ...registro, ...JSON.parse(opciones.body) };
+                return Response.json(registro);
+            }
+        });
+        const guardar = await screen.findByRole('button', { name: 'Guardar cambios' });
+        await waitFor(() => { if (guardar.disabled) throw new Error('La edición sigue cerrada.'); });
+        const comuna = screen.getByDisplayValue('Santiago');
+        fireEvent.change(comuna, { target: { value: 'La Florida' } });
+        fireEvent.click(guardar);
+        expect((await screen.findByRole('alert')).textContent).toContain('Ya existe una cuenta con ese correo.');
+        expect(comuna.value).toBe('La Florida');
+        rechazar = false;
+        await waitFor(() => { if (guardar.disabled) throw new Error('La edición sigue en curso.'); });
+        fireEvent.click(guardar);
+        expect(await screen.findByRole('heading', { name: 'Detalle del Usuario' })).toBeTruthy();
+        expect(await screen.findByText('La Florida')).toBeTruthy();
+        const detalleOrden = (await screen.findByText('#' + orden.id)).closest('tr');
+        expect(detalleOrden.querySelector('a').getAttribute('href')).toBe('/catalogo-conectado/ordenes/' + orden.id);
+    });
+
+    it('informa el rechazo al resolver una incidencia y actualiza el listado tras un segundo intento válido', async () => {
+        spyOn(window, 'confirm').and.returnValue(true);
+        let estado = 'PENDIENTE';
+        let permitir = false;
+        montar(RUTA_ADMIN_CONECTADA + '/incidencias', { rol: 'ADMIN',
+            configuracion: { registro: false, escrituras: true },
+            lecturas: { '/api/v1/incidencias': () => [{ ...incidencia, estado }] },
+            escritura: () => {
+                if (!permitir) return Response.json({ detail: 'Resolución prohibida.' }, { status: 403 });
+                estado = 'RESUELTA';
+                return new Response(null, { status: 204 });
+            }
+        });
+        const resolver = await screen.findByRole('button', { name: 'Marcar resuelta' });
+        await waitFor(() => { if (resolver.disabled) throw new Error('La resolución sigue cerrada.'); });
+        fireEvent.click(resolver);
+        expect((await screen.findByRole('alert')).textContent).toContain('Resolución prohibida.');
+        expect(screen.getByText('Pendiente')).toBeTruthy();
+        permitir = true;
+        await waitFor(() => { if (resolver.disabled) throw new Error('La resolución sigue en curso.'); });
+        fireEvent.click(resolver);
+        expect(await screen.findByText('Resuelta')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Marcar resuelta' })).toBeNull();
+    });
 });

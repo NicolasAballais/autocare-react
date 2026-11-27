@@ -11,6 +11,9 @@ node_modules
 dist
 dist-railway
 dist-ssr
+coverage/karma/
+playwright-report/
+test-results/
 .env
 .env.*
 !.env.example

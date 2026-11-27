@@ -14,9 +14,11 @@ import {
 import Carrito from '../pages/Carrito';
 import Checkout from '../pages/Checkout';
 import Pago from '../pages/Pago';
+import PagoError from '../pages/PagoError';
 import CompraExitosa from '../pages/CompraExitosa';
 import DetalleOrden from '../pages/DetalleOrden';
 import Boleta from '../pages/Boleta';
+import Ordenes from '../pages/Ordenes';
 import { ordenPerteneceAUsuario } from '../services/ordenesService';
 
 import {
@@ -178,6 +180,61 @@ describe('Flujo de compra', () => {
         expect(ordenPerteneceAUsuario({ cliente: { nombre, correo: ' ROSA@example.test ' } }, usuario)).toBeTrue();
         expect(ordenPerteneceAUsuario({ cliente: { nombre } }, usuario)).toBeTrue();
         expect(ordenPerteneceAUsuario({ usuarioId: 2, cliente: { nombre, correo: usuario.correo } }, usuario)).toBeFalse();
+    });
+
+
+    it('conserva carrito y stock al rechazar crédito y recupera la entrega al reintentar', () => {
+        const carrito = [{ id: 1, nombre: 'Aceite de prueba', precio: 1000, stock: 3, cantidad: 1 }];
+        localStorage.setItem('carritoAutoCare', JSON.stringify(carrito));
+        localStorage.setItem('productosAutoCare', JSON.stringify([{ id: 1, stock: 3 }]));
+        localStorage.setItem('ordenesAutoCare', '[]');
+        renderizarConCarrito(
+            <Routes>
+                <Route path="/pago" element={<Pago />} />
+                <Route path="/pago-error" element={<PagoError />} />
+            </Routes>,
+            { pathname: '/pago', state: { datosCliente: { nombre: 'Cliente de prueba' }, tipoEntrega: 'Envío estándar' } }
+        );
+        fireEvent.click(screen.getByRole('radio', { name: 'Tarjeta de crédito' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Pagar' }));
+        expect(screen.getByRole('heading', { name: 'No fue posible procesar el pago' })).toBeTruthy();
+        expect(JSON.parse(localStorage.getItem('carritoAutoCare'))).toEqual(carrito);
+        expect(JSON.parse(localStorage.getItem('productosAutoCare'))[0].stock).toBe(3);
+        expect(JSON.parse(localStorage.getItem('ordenesAutoCare'))).toEqual([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Volver a intentar el pago' }));
+        expect(screen.getByRole('radio', { name: 'Tarjeta de débito' })).toBeTruthy();
+    });
+
+    it('ofrece volver al carrito al abrir el error de pago sin un intento previo', () => {
+        renderizarConCarrito(<PagoError />);
+        expect(screen.getByText('No existe información disponible sobre este intento de pago.')).toBeTruthy();
+        expect(screen.getByRole('link', { name: 'Volver al carrito' }).getAttribute('href')).toBe('/carrito');
+    });
+
+    it('el historial local muestra únicamente compras de la cuenta activa', () => {
+        localStorage.setItem('sesionAutoCare', JSON.stringify({ id: 12, rol: 'cliente' }));
+        const ordenes = [
+            { id: 101, usuarioId: 12, estado: 'Enviado', productos: [{}], total: 1000 },
+            { id: 102, usuarioId: 12, estado: 'Procesando', productos: [{}], total: 2000 },
+            { id: 103, usuarioId: 13, estado: 'Procesando', productos: [{}], total: 3000 }
+        ];
+        localStorage.setItem('ordenesAutoCare', JSON.stringify(ordenes));
+        renderizarConCarrito(<Ordenes />, '/ordenes');
+        expect(screen.getByRole('heading', { name: 'Orden #101' })).toBeTruthy();
+        expect(screen.getByRole('heading', { name: 'Orden #102' })).toBeTruthy();
+        expect(screen.queryByRole('heading', { name: 'Orden #103' })).toBeNull();
+        expect(screen.getAllByRole('link', { name: 'Ver detalle' }).map((link) => link.getAttribute('href')))
+            .toEqual(['/ordenes/101', '/ordenes/102']);
+    });
+
+    it('el historial local solicita sesión y distingue una cuenta sin compras', () => {
+        const vista = renderizarConCarrito(<Ordenes />, '/ordenes');
+        expect(screen.getByText('Debes iniciar sesión para consultar tus órdenes.')).toBeTruthy();
+        vista.unmount();
+        localStorage.setItem('sesionAutoCare', JSON.stringify({ id: 12, rol: 'cliente' }));
+        localStorage.setItem('ordenesAutoCare', '[]');
+        renderizarConCarrito(<Ordenes />, '/ordenes');
+        expect(screen.getByText('No tienes órdenes registradas.')).toBeTruthy();
     });
 
     it('rechaza el pago local cuando el stock vigente ya no alcanza', () => {
