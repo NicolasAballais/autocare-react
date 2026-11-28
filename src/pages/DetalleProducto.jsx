@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 
 import {
-    IMAGEN_PRODUCTO_ALTERNATIVA,
     mostrarImagenProductoAlternativa,
+    obtenerImagenProducto,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
@@ -66,6 +66,7 @@ export default function DetalleProducto() {
         );
 
     const precioFinal = conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto);
+    const imagenProducto = obtenerImagenProducto(producto);
     const agotado = producto.stock <= 0;
     const cantidadEnCarrito = conectado
         ? remoto.carrito.find((linea) => mismoIdProducto(linea.id, producto.id))?.cantidad ?? 0
@@ -117,11 +118,14 @@ export default function DetalleProducto() {
                 <div className="col-md-6">
 
                     <img
-                        src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
-                        onError={mostrarImagenProductoAlternativa}
+                        src={imagenProducto}
+                        onError={(evento) => mostrarImagenProductoAlternativa(evento, producto.imagen)}
                         alt={producto.nombre}
                         className="img-fluid rounded shadow-sm"
                     />
+                    {producto.imagen && imagenProducto !== producto.imagen && (
+                        <p className="small text-muted mt-2 mb-0">Imagen referencial</p>
+                    )}
 
                 </div>
 

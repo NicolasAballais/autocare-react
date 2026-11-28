@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 import {
-    IMAGEN_PRODUCTO_ALTERNATIVA,
     mostrarImagenProductoAlternativa,
+    obtenerImagenProducto,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
@@ -70,8 +70,8 @@ export default function Ofertas() {
                                 <div className="card h-100 shadow-sm">
 
                                     <img
-                                        src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
-                                        onError={mostrarImagenProductoAlternativa}
+                                        src={obtenerImagenProducto(producto)}
+                                        onError={(evento) => mostrarImagenProductoAlternativa(evento, producto.imagen)}
                                         className="card-img-top"
                                         alt={producto.nombre}
                                         style={{

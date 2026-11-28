@@ -2,8 +2,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { obtenerCategorias } from '../services/categoriasService';
 import {
-    IMAGEN_PRODUCTO_ALTERNATIVA,
     mostrarImagenProductoAlternativa,
+    obtenerImagenProducto,
     obtenerProductos,
     productoTieneStockCritico
 } from '../services/productosService';
@@ -145,8 +145,8 @@ export default function Categorias() {
                             <div className="card shadow-sm h-100">
 
                                 <img
-                                    src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
-                                    onError={mostrarImagenProductoAlternativa}
+                                    src={obtenerImagenProducto(producto)}
+                                    onError={(evento) => mostrarImagenProductoAlternativa(evento, producto.imagen)}
                                     className="card-img-top"
                                     alt={producto.nombre}
                                     style={{

@@ -81,6 +81,32 @@ test('INVITADO · pagina 50 productos y carga las imágenes del catálogo y su r
     await expect(imagenes).toHaveCount(5);
 });
 
+test('INVITADO · abre una foto por SKU y pasa al respaldo de categoría si falla', async ({ page, api }) => {
+    const [producto] = api.productos;
+    producto.codigo = 'EV3-FRE-001';
+    producto.imagen = '/images/catalogo-ev3/frenos.webp';
+    const foto = '/images/catalogo-ev3/productos/pastillas-freno.webp';
+    const imagen = page.getByRole('img', { name: producto.nombre, exact: true });
+
+    await page.goto(RUTAS.catalogo);
+    await expect(imagen).toHaveAttribute('src', foto);
+    expect(await imagen.evaluate((elemento) => elemento.decode().then(() => elemento.naturalWidth))).toBeGreaterThan(0);
+    await page.getByRole('link', { name: 'Ofertas' }).click();
+    await expect(imagen).toHaveAttribute('src', foto);
+    await page.getByRole('link', { name: 'Ver producto' }).click();
+    await expect(page.getByText('Imagen referencial', { exact: true })).toBeVisible();
+
+    await page.route('**' + foto, (ruta) => ruta.fulfill({ status: 404, body: 'Imagen no encontrada' }));
+    // Recarga el documento para que la foto ya decodificada no se reutilice en el navegador.
+    await page.reload();
+    await expect(imagen).toHaveAttribute('src', producto.imagen);
+    expect(await imagen.evaluate((elemento) => elemento.decode().then(() => elemento.naturalWidth))).toBeGreaterThan(0);
+    await page.route('**' + producto.imagen, (ruta) => ruta.fulfill({ status: 404, body: 'Imagen no encontrada' }));
+    await page.reload();
+    await expect(imagen).toHaveAttribute('src', '/images/producto-sin-imagen.webp');
+    expect(await imagen.evaluate((elemento) => elemento.decode().then(() => elemento.naturalWidth))).toBeGreaterThan(0);
+});
+
 test('INVITADO · arma un carrito conectado y debe iniciar sesión para comprar', async ({ page, api }) => {
     await page.goto(RUTAS.catalogo);
     await page.getByRole('button', { name: 'Agregar ' + ACEITE + ' al carrito conectado' }).click();

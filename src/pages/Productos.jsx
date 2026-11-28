@@ -6,8 +6,8 @@ import {
 } from 'react-router-dom';
 
 import {
-    IMAGEN_PRODUCTO_ALTERNATIVA,
     mostrarImagenProductoAlternativa,
+    obtenerImagenProducto,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
@@ -326,8 +326,8 @@ export default function Productos() {
                                             <div className="card shadow-sm h-100">
 
                                                 <img
-                                                    src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
-                                                    onError={mostrarImagenProductoAlternativa}
+                                                    src={obtenerImagenProducto(producto)}
+                                                    onError={(evento) => mostrarImagenProductoAlternativa(evento, producto.imagen)}
                                                     className="card-img-top"
                                                     alt={producto.nombre}
                                                     style={{

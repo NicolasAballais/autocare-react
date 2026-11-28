@@ -213,6 +213,24 @@ describe('Catálogo conectado', () => {
         expect(screen.getByRole('button', { name: 'Agregar al carrito conectado' }).disabled).toBeTrue();
     });
 
+    it('reusa fotos por SKU solo cuando la API devuelve una ficha de categoría de la demo', async () => {
+        const [baseAceite, baseFreno, basePersonalizada] = productosApi;
+        const aceite = { ...baseAceite, codigo: 'EV3-LUB-001', imagen: '/images/catalogo-ev3/aceites-lubricantes.webp' };
+        const freno = { ...baseFreno, codigo: 'EV3-FRE-001', imagen: '/images/catalogo-ev3/frenos.webp' };
+        const personalizada = { ...basePersonalizada, codigo: 'EV3-ILU-001', imagen: '/images/ampolleta.png' };
+        simularCatalogo(fetchSimulado, [aceite, freno, personalizada]);
+        renderizar();
+
+        const fotoFreno = await screen.findByRole('img', { name: freno.nombre });
+        expect(screen.getByRole('img', { name: aceite.nombre }).getAttribute('src')).toBe('/images/Aceite.png');
+        expect(screen.getByRole('img', { name: personalizada.nombre }).getAttribute('src')).toBe(personalizada.imagen);
+        expect(fotoFreno.getAttribute('src')).toBe('/images/catalogo-ev3/productos/pastillas-freno.webp');
+        fireEvent.error(fotoFreno);
+        expect(fotoFreno.getAttribute('src')).toBe(freno.imagen);
+        fireEvent.error(fotoFreno);
+        expect(fotoFreno.getAttribute('src')).toBe(IMAGEN_PRODUCTO_ALTERNATIVA);
+    });
+
     it('abre el detalle por ObjectId y protege el carrito local en ambas pantallas', async () => {
         const carritoLocal = [{ ...productosLocales[1], cantidad: 2 }];
         localStorage.setItem('carritoAutoCare', JSON.stringify(carritoLocal));
