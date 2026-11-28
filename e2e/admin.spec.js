@@ -100,14 +100,23 @@ test('ADMIN · despacha órdenes y resuelve incidencias desde sus listados', asy
     await expect(incidencia.getByRole('button', { name: 'Marcar resuelta' })).toHaveCount(0);
 });
 
-test('ADMIN · lee stock crítico y los totales del reporte', async ({ page }, testInfo) => {
+test('ADMIN · distingue stock crítico y agotado en los avisos y el reporte', async ({ page, api }, testInfo) => {
+    const filtro = api.productos.find((producto) => producto.id === IDS.filtro);
+    const agotado = 'Filtro temporal agotado';
+    api.productos.push({ ...filtro, id: IDS.productoNuevo, nombre: agotado, stock: 0 });
     await iniciarSesion(page, 'ADMIN');
     await page.goto(RUTAS.admin + '/notificaciones');
     await expect(page.getByText(FILTRO, { exact: true })).toBeVisible();
-    await expect(page.getByText('Stock crítico: 1')).toBeVisible();
+    await expect(page.getByText('Stock crítico: 1').first()).toBeVisible();
+    await expect(page.getByText('Agotado', { exact: true })).toBeVisible();
+    await page.goto(RUTAS.admin + '/productos');
+    await expect(page.getByRole('row', { name: new RegExp(agotado) })).toContainText('Agotado');
+    await expect(page.getByRole('row', { name: new RegExp(FILTRO) })).toContainText('Stock crítico');
     await page.goto(RUTAS.admin + '/reportes');
     await expect(page.getByText('Total de compras simuladas')).toBeVisible();
     await expect(page.getByText('$18.000', { exact: true })).toBeVisible();
+    await expect(page.getByText('Agotados: 1', { exact: true })).toBeVisible();
+    await expect(page.getByRole('row', { name: new RegExp(agotado) })).toContainText('Agotado');
     await expect(page.getByRole('row', { name: new RegExp(FILTRO) })).toContainText(/crítico/i);
     await capturar(page, testInfo, 'admin-reporte-simulado');
 });

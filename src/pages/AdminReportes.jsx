@@ -1,4 +1,4 @@
-import { obtenerProductos } from '../services/productosService';
+import { obtenerProductos, productoTieneStockCritico } from '../services/productosService';
 import { obtenerOrdenes } from '../services/ordenesService';
 import { obtenerClientes } from '../services/usuariosService';
 import { obtenerIncidencias } from '../services/incidenciasService';
@@ -49,10 +49,8 @@ export default function AdminReportes({ conectado = false }) {
     );
 
 
-    const productosStockCritico = productos.filter(
-        (producto) =>
-            producto.stock <= producto.stockCritico
-    );
+    const productosStockCritico = productos.filter(productoTieneStockCritico);
+    const productosAgotados = productos.filter((producto) => producto.stock <= 0);
 
 
     const incidenciasPendientes = incidencias.filter(
@@ -175,7 +173,7 @@ export default function AdminReportes({ conectado = false }) {
                             </h3>
 
                             <small className="text-muted">
-                                Productos que requieren atención
+                                Agotados: {productosAgotados.length}
                             </small>
 
                         </div>
@@ -306,8 +304,8 @@ export default function AdminReportes({ conectado = false }) {
 
                                 {productos.map((producto) => {
 
-                                    const critico =
-                                        producto.stock <= producto.stockCritico;
+                                    const agotado = producto.stock <= 0;
+                                    const critico = productoTieneStockCritico(producto);
 
                                     return (
 
@@ -336,15 +334,9 @@ export default function AdminReportes({ conectado = false }) {
                                             <td>
 
                                                 <span
-                                                    className={
-                                                        critico
-                                                            ? 'badge text-bg-danger'
-                                                            : 'badge text-bg-success'
-                                                    }
+                                                    className={`badge text-bg-${agotado ? 'danger' : critico ? 'warning' : 'success'}`}
                                                 >
-                                                    {critico
-                                                        ? 'Crítico'
-                                                        : 'Normal'}
+                                                    {agotado ? 'Agotado' : critico ? 'Crítico' : 'Normal'}
                                                 </span>
 
                                             </td>

@@ -1,6 +1,19 @@
 import productosIniciales from '../data/productos.json';
 
 const CLAVE_PRODUCTOS = 'productosAutoCare';
+export const IMAGEN_PRODUCTO_ALTERNATIVA = '/images/producto-sin-imagen.webp';
+
+export function mostrarImagenProductoAlternativa(evento) {
+    const imagen = evento.currentTarget;
+    // Evita repetir el intento si también falla el recurso alternativo.
+    if (imagen.getAttribute('src') !== IMAGEN_PRODUCTO_ALTERNATIVA) {
+        imagen.src = IMAGEN_PRODUCTO_ALTERNATIVA;
+    }
+}
+
+export function productoTieneStockCritico(producto) {
+    return producto.stock > 0 && producto.stock <= producto.stockCritico;
+}
 
 function normalizarProductos(productos) {
     return productos.map((producto) => {

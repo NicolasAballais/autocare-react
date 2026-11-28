@@ -2,10 +2,13 @@ import { Link } from 'react-router-dom';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 import {
+    IMAGEN_PRODUCTO_ALTERNATIVA,
+    mostrarImagenProductoAlternativa,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
-    productoEstaEnOferta
+    productoEstaEnOferta,
+    productoTieneStockCritico
 } from '../services/productosService';
 
 
@@ -67,7 +70,8 @@ export default function Ofertas() {
                                 <div className="card h-100 shadow-sm">
 
                                     <img
-                                        src={producto.imagen}
+                                        src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
+                                        onError={mostrarImagenProductoAlternativa}
                                         className="card-img-top"
                                         alt={producto.nombre}
                                         style={{
@@ -114,6 +118,8 @@ export default function Ofertas() {
                                                 ${producto.precioOferta.toLocaleString('es-CL')}
                                             </h4>
 
+                                            {producto.stock <= 0 && <p className="text-danger fw-bold">Agotado</p>}
+                                            {productoTieneStockCritico(producto) && <p className="fw-bold">Stock crítico</p>}
 
                                             <Link
                                                 to={`${rutaProductos}/${producto.id}`}

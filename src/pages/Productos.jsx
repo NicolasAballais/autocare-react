@@ -6,10 +6,13 @@ import {
 } from 'react-router-dom';
 
 import {
+    IMAGEN_PRODUCTO_ALTERNATIVA,
+    mostrarImagenProductoAlternativa,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
-    productoEstaEnOferta
+    productoEstaEnOferta,
+    productoTieneStockCritico
 } from '../services/productosService';
 
 import {
@@ -24,6 +27,7 @@ import { useSesionConectada } from '../context/sesionConectada';
 import { useCarritoConectado } from '../context/CarritoConectadoContext.jsx';
 import { mismoIdProducto } from '../services/carritoService.js';
 
+const PRODUCTOS_POR_PAGINA = 9;
 
 export default function Productos() {
     const catalogo = useCatalogoConectado();
@@ -65,6 +69,27 @@ export default function Productos() {
         productosFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
 
+    // Los filtros y el orden se aplican al catálogo completo antes de tomar la página.
+    const totalProductos = productosFiltrados.length;
+    const totalPaginas = Math.max(1, Math.ceil(totalProductos / PRODUCTOS_POR_PAGINA));
+    const paginaSolicitada = Number(searchParams.get('pagina'));
+    const paginaActual = Number.isInteger(paginaSolicitada) && paginaSolicitada > 0
+        ? Math.min(paginaSolicitada, totalPaginas)
+        : 1;
+    const inicioPagina = (paginaActual - 1) * PRODUCTOS_POR_PAGINA;
+    const finPagina = Math.min(inicioPagina + PRODUCTOS_POR_PAGINA, totalProductos);
+    const productosVisibles = conectado ? productosFiltrados.slice(inicioPagina, finPagina) : productosFiltrados;
+
+    function cambiarPagina(pagina) {
+        const parametros = new URLSearchParams(searchParams);
+        if (pagina === 1) {
+            parametros.delete('pagina');
+        } else {
+            parametros.set('pagina', String(pagina));
+        }
+        setSearchParams(parametros);
+    }
+
     function alternarCategoria(categoria) {
         const parametros = new URLSearchParams(searchParams);
 
@@ -74,6 +99,7 @@ export default function Productos() {
             parametros.append('categoria', categoria);
         }
 
+        parametros.delete('pagina');
         setSearchParams(parametros);
     }
 
@@ -85,7 +111,17 @@ export default function Productos() {
             parametros.delete('buscar');
         }
 
+        parametros.delete('pagina');
         setSearchParams(parametros, { replace: true });
+    }
+
+    function cambiarOrden(nuevoOrden) {
+        setOrden(nuevoOrden);
+        if (searchParams.has('pagina')) {
+            const parametros = new URLSearchParams(searchParams);
+            parametros.delete('pagina');
+            setSearchParams(parametros, { replace: true });
+        }
     }
 
     function limpiarFiltros() {
@@ -103,7 +139,7 @@ export default function Productos() {
                 </h1>
 
                 <p className="text-muted">
-                    {productosFiltrados.length} productos disponibles
+                    {totalProductos} productos disponibles
                 </p>
 
                 {!conectado && (
@@ -216,11 +252,7 @@ export default function Productos() {
                                 className="form-select"
                                 aria-label="Ordenar productos"
                                 value={orden}
-                                onChange={(evento) =>
-                                    setOrden(
-                                        evento.target.value
-                                    )
-                                }
+                                onChange={(evento) => cambiarOrden(evento.target.value)}
                             >
 
                                 <option value="">
@@ -246,7 +278,13 @@ export default function Productos() {
                     </div>
 
 
-                    {productosFiltrados.length === 0 ? (
+                    {conectado && (
+                        <p className="text-muted" aria-live="polite">
+                            Mostrando {totalProductos ? inicioPagina + 1 : 0}–{finPagina} de {totalProductos} productos
+                        </p>
+                    )}
+
+                    {totalProductos === 0 ? (
 
                         <div className="alert alert-info">
                             {conectado && productos.length === 0
@@ -258,7 +296,7 @@ export default function Productos() {
 
                         <div className="row g-4">
 
-                            {productosFiltrados.map(
+                            {productosVisibles.map(
                                 (producto) => {
 
                                     const descuento =
@@ -267,6 +305,7 @@ export default function Productos() {
                                         );
 
                                     const precioFinal = precioParaMostrar(producto);
+                                    const agotado = producto.stock <= 0;
                                     const cantidadEnCarrito = conectado
                                         ? remoto.carrito.find((linea) => mismoIdProducto(linea.id, producto.id))?.cantidad ?? 0
                                         : 0;
@@ -287,7 +326,8 @@ export default function Productos() {
                                             <div className="card shadow-sm h-100">
 
                                                 <img
-                                                    src={producto.imagen}
+                                                    src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
+                                                    onError={mostrarImagenProductoAlternativa}
                                                     className="card-img-top"
                                                     alt={producto.nombre}
                                                     style={{
@@ -355,17 +395,10 @@ export default function Productos() {
                                                         </p>
 
 
-                                                        {
-                                                            producto.stock <=
-                                                            producto.stockCritico
-                                                            && (
-
-                                                                <div className="alert alert-warning py-2">
-                                                                    Stock crítico
-                                                                </div>
-
-                                                            )
-                                                        }
+                                                        {agotado && <div className="alert alert-danger py-2">Agotado</div>}
+                                                        {productoTieneStockCritico(producto) && (
+                                                            <div className="alert alert-warning py-2">Stock crítico</div>
+                                                        )}
 
 
                                                         <div className="d-flex gap-2">
@@ -382,7 +415,7 @@ export default function Productos() {
                                                                 type="button"
                                                                 className="btn btn-danger"
                                                                 disabled={
-                                                                    producto.stock <= 0 ||
+                                                                    agotado ||
                                                                     (conectado && (remoto.intento || cantidadEnCarrito >= producto.stock))
                                                                 }
                                                                 aria-label={conectado ? `Agregar ${producto.nombre} al carrito conectado` : undefined}
@@ -411,6 +444,37 @@ export default function Productos() {
 
                         </div>
 
+                    )}
+
+                    {conectado && totalPaginas > 1 && (
+                        <nav className="mt-4" aria-label="Paginación del catálogo">
+                            <ul className="pagination flex-wrap gap-1 justify-content-center">
+                                <li className="page-item">
+                                    <button type="button" className="page-link" disabled={paginaActual === 1}
+                                        onClick={() => cambiarPagina(paginaActual - 1)}>
+                                        Anterior
+                                    </button>
+                                </li>
+                                {Array.from({ length: totalPaginas }, (_, indice) => {
+                                    const pagina = indice + 1;
+                                    return (
+                                        <li className={pagina === paginaActual ? 'page-item active' : 'page-item'} key={pagina}>
+                                            <button type="button" className="page-link" aria-label={`Página ${pagina}`}
+                                                aria-current={pagina === paginaActual ? 'page' : undefined}
+                                                onClick={() => cambiarPagina(pagina)}>
+                                                {pagina}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                                <li className="page-item">
+                                    <button type="button" className="page-link" disabled={paginaActual === totalPaginas}
+                                        onClick={() => cambiarPagina(paginaActual + 1)}>
+                                        Siguiente
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
                     )}
 
                 </section>

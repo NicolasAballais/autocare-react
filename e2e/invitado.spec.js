@@ -30,6 +30,57 @@ test('INVITADO · explora catálogo, filtros, categorías, ofertas y detalle', a
     await expect(page.getByText('Aceite sintético para motor')).toBeVisible();
 });
 
+test('INVITADO · pagina 50 productos y carga las imágenes del catálogo y su respaldo', async ({ page, api }) => {
+    const archivos = ['aceites-lubricantes', 'filtros', 'frenos', 'encendido-electricidad',
+        'iluminacion', 'refrigeracion', 'suspension-direccion', 'limpieza-cuidado'];
+    const [base] = api.productos;
+    const productos = Array.from({ length: 50 }, (_, indice) => ({
+        ...base,
+        id: String(100 + indice).padStart(24, '0'),
+        nombre: `Repuesto demo ${indice + 1}`,
+        imagen: `/images/catalogo-ev3/${archivos[indice % archivos.length]}.webp`
+    }));
+    const agotado = productos[9];
+    agotado.stock = 0;
+    agotado.imagen = '/images/catalogo-ev3/no-existe.webp';
+    api.productos = productos;
+
+    await page.goto(RUTAS.catalogo);
+    await expect(page.getByText('Mostrando 1–9 de 50 productos')).toBeVisible();
+    const imagenes = page.locator('main img');
+    await expect(imagenes).toHaveCount(9);
+    await imagenes.evaluateAll((elementos) => Promise.all(elementos.map((imagen) => imagen.decode())));
+    await expect(imagenes.first()).toHaveAttribute('src', productos[0].imagen);
+    const primeraTarjeta = page.locator('.card').filter({ has: page.getByRole('img', { name: productos[0].nombre, exact: true }) });
+    await primeraTarjeta.getByRole('link', { name: 'Ver detalle' }).click();
+    const imagenDetalleValida = page.getByRole('img', { name: productos[0].nombre, exact: true });
+    await expect(imagenDetalleValida).toHaveAttribute('src', productos[0].imagen);
+    expect(await imagenDetalleValida.evaluate((imagen) => imagen.decode().then(() => imagen.naturalWidth))).toBeGreaterThan(0);
+    await page.getByRole('link', { name: 'Volver', exact: true }).click();
+
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByText('Mostrando 10–18 de 50 productos')).toBeVisible();
+    const imagenAgotado = page.getByRole('img', { name: agotado.nombre, exact: true });
+    await expect(imagenAgotado).toHaveAttribute('src', '/images/producto-sin-imagen.webp');
+    expect(await imagenAgotado.evaluate((imagen) => imagen.decode().then(() => imagen.naturalWidth))).toBeGreaterThan(0);
+    const tarjeta = page.locator('.card').filter({ has: imagenAgotado });
+    await expect(tarjeta.getByText('Agotado', { exact: true })).toBeVisible();
+    await expect(tarjeta.getByRole('button', { name: /al carrito conectado/ })).toBeDisabled();
+    await tarjeta.getByRole('link', { name: 'Ver detalle' }).click();
+    await expect(page.getByRole('heading', { name: agotado.nombre })).toBeVisible();
+    await expect(imagenAgotado).toHaveAttribute('src', '/images/producto-sin-imagen.webp');
+    expect(await imagenAgotado.evaluate((imagen) => imagen.decode().then(() => imagen.naturalWidth))).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: 'Agregar al carrito conectado' })).toBeDisabled();
+
+    await page.goBack();
+    await expect(page.getByRole('button', { name: 'Página 2' })).toHaveAttribute('aria-current', 'page');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Página 6' }).click();
+    await expect(page.getByText('Mostrando 46–50 de 50 productos')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(imagenes).toHaveCount(5);
+});
+
 test('INVITADO · arma un carrito conectado y debe iniciar sesión para comprar', async ({ page, api }) => {
     await page.goto(RUTAS.catalogo);
     await page.getByRole('button', { name: 'Agregar ' + ACEITE + ' al carrito conectado' }).click();

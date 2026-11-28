@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { obtenerProductos } from '../services/productosService';
+import { obtenerProductos, productoTieneStockCritico } from '../services/productosService';
 import { obtenerOrdenes } from '../services/ordenesService';
 import { obtenerIncidencias } from '../services/incidenciasService';
 import { obtenerCategorias } from '../services/categoriasService';
@@ -30,9 +30,8 @@ export default function AdminPanel({ conectado = false }) {
     const clientes = conectado ? clientesApi.datos : obtenerClientes();
 
 
-    const productosStockCritico = productos?.filter(
-        (producto) =>
-            producto.stock <= producto.stockCritico
+    const productosConAlerta = productos?.filter(
+        (producto) => producto.stock <= 0 || productoTieneStockCritico(producto)
     );
 
 
@@ -244,7 +243,7 @@ export default function AdminPanel({ conectado = false }) {
                                 <i className="bi bi-bell fs-2 text-danger"></i>
 
                                 <span className="badge text-bg-danger">
-                                    {productosStockCritico?.length ?? '—'}
+                                    {productosConAlerta?.length ?? '—'}
                                 </span>
 
                             </div>
@@ -255,7 +254,7 @@ export default function AdminPanel({ conectado = false }) {
                             <EstadoCatalogoAdmin consulta={productosApi} />
 
                             <p className="text-muted">
-                                Revisar productos con stock crítico.
+                                Revisar productos agotados o con stock crítico.
                             </p>
 
                             <Link

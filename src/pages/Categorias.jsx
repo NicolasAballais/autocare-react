@@ -1,7 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { obtenerCategorias } from '../services/categoriasService';
-import { obtenerProductos } from '../services/productosService';
+import {
+    IMAGEN_PRODUCTO_ALTERNATIVA,
+    mostrarImagenProductoAlternativa,
+    obtenerProductos,
+    productoTieneStockCritico
+} from '../services/productosService';
 import { RUTA_CATALOGO_CONECTADO, useCatalogoConectado } from '../context/catalogo';
 
 export default function Categorias() {
@@ -140,7 +145,8 @@ export default function Categorias() {
                             <div className="card shadow-sm h-100">
 
                                 <img
-                                    src={producto.imagen}
+                                    src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
+                                    onError={mostrarImagenProductoAlternativa}
                                     className="card-img-top"
                                     alt={producto.nombre}
                                     style={{
@@ -170,9 +176,11 @@ export default function Categorias() {
                                         )}
                                     </p>
 
-                                    <p className="mb-3">
+                                    <p className="mb-2">
                                         Stock: {producto.stock}
                                     </p>
+                                    {producto.stock <= 0 && <p className="text-danger fw-bold">Agotado</p>}
+                                    {productoTieneStockCritico(producto) && <p className="fw-bold">Stock crítico</p>}
 
                                     <Link
                                         to={`${rutaProductos}/${producto.id}`}

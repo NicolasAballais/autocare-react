@@ -4,7 +4,7 @@ import { useBaseAdmin } from '../context/catalogo.js';
 import { useSesionConectada } from '../context/sesionConectada.js';
 import { useConsultaCatalogoAdmin } from '../hooks/useConsultaCatalogoAdmin.js';
 import { adminCatalogoApi, listarProductosAdmin, mensajeErrorAdmin } from '../services/adminCatalogoApi.js';
-import { eliminarProducto, obtenerPrecioFinalProducto, obtenerProductos } from '../services/productosService.js';
+import { eliminarProducto, obtenerPrecioFinalProducto, obtenerProductos, productoTieneStockCritico } from '../services/productosService.js';
 import { AvisoEscriturasAdmin, EstadoCatalogoAdmin } from '../components/EstadoCatalogoAdmin.jsx';
 
 const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
@@ -94,7 +94,8 @@ export default function AdminProductos({ conectado = false, cliente = adminCatal
                 </tr></thead>
                 <tbody>{resultados.map((producto) => {
                     const puedeEditar = puedeCrear && (!conectado || cliente.puedeEditar('productos', producto));
-                    const critico = producto.stock <= producto.stockCritico;
+                    const agotado = producto.stock <= 0;
+                    const critico = productoTieneStockCritico(producto);
                     return <tr key={producto.id}>
                         <td>{producto.codigo}</td>
                         <td><strong>{producto.nombre}</strong><div className="small text-muted">{producto.descripcion}</div></td>
@@ -105,8 +106,8 @@ export default function AdminProductos({ conectado = false, cliente = adminCatal
                             </div>}
                         </td>
                         <td className="text-center">{producto.stock}</td>
-                        <td className="text-center"><span className={`badge text-bg-${critico ? 'danger' : 'success'}`}>
-                            {critico ? 'Stock crítico' : 'Disponible'}
+                        <td className="text-center"><span className={`badge text-bg-${agotado ? 'danger' : critico ? 'warning' : 'success'}`}>
+                            {agotado ? 'Agotado' : critico ? 'Stock crítico' : 'Disponible'}
                         </span></td>
                         <td className="text-center">
                             <div className="d-flex justify-content-center gap-2">

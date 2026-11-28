@@ -12,6 +12,7 @@ import DetalleProducto from '../pages/DetalleProducto';
 import Ofertas from '../pages/Ofertas';
 import Pago from '../pages/Pago';
 import Productos from '../pages/Productos';
+import { IMAGEN_PRODUCTO_ALTERNATIVA } from '../services/productosService';
 import categoriasLocales from '../data/categorias.json';
 import productosLocales from '../data/productos.json';
 
@@ -27,6 +28,18 @@ const productosApi = productosLocales.map((producto, indice) => ({
     categoriaId: categoriasApi.find((categoria) => categoria.nombre === producto.categoria).id,
     precioFinal: [28000, 21250, 15000, 10800][indice]
 }));
+
+function crearProductosPaginados() {
+    return Array.from({ length: 50 }, (_, indice) => {
+        const base = productosApi[indice < 25 ? 0 : 1];
+        return {
+            ...base,
+            id: String(100 + indice).padStart(24, '0'),
+            nombre: `Repuesto ${indice + 1}`,
+            precioFinal: 1000 * (indice + 1)
+        };
+    });
+}
 
 function simularCatalogo(fetchSimulado, productos = productosApi, categorias = categoriasApi) {
     fetchSimulado.and.callFake(async (url) => {
@@ -124,6 +137,80 @@ describe('Catálogo conectado', () => {
         });
         const nombres = screen.getAllByRole('img').map((imagen) => imagen.alt);
         expect(nombres).toEqual([0, 3, 2, 1].map((indice) => productosApi[indice].nombre));
+    });
+
+    it('pagina 50 productos de a nueve y respeta los límites', async () => {
+        simularCatalogo(fetchSimulado, crearProductosPaginados());
+        renderizar();
+        await screen.findByText('Mostrando 1–9 de 50 productos');
+        expect(screen.getAllByRole('link', { name: 'Ver detalle' }).length).toBe(9);
+
+        const navegacion = within(screen.getByRole('navigation', { name: 'Paginación del catálogo' }));
+        const anterior = navegacion.getByRole('button', { name: 'Anterior' });
+        const siguiente = navegacion.getByRole('button', { name: 'Siguiente' });
+        expect(anterior.disabled).toBeTrue();
+        fireEvent.click(siguiente);
+        expect(screen.getByText('Mostrando 10–18 de 50 productos')).toBeTruthy();
+        expect(navegacion.getByRole('button', { name: 'Página 2' }).getAttribute('aria-current')).toBe('page');
+        fireEvent.click(navegacion.getByRole('button', { name: 'Página 6' }));
+        expect(screen.getByText('Mostrando 46–50 de 50 productos')).toBeTruthy();
+        expect(screen.getAllByRole('link', { name: 'Ver detalle' }).length).toBe(5);
+        expect(siguiente.disabled).toBeTrue();
+        fireEvent.click(anterior);
+        expect(screen.getByText('Mostrando 37–45 de 50 productos')).toBeTruthy();
+    });
+
+    it('ajusta una página fuera de rango y reinicia al buscar, filtrar, ordenar o limpiar', async () => {
+        simularCatalogo(fetchSimulado, crearProductosPaginados());
+        renderizar(`${RUTA_CATALOGO_CONECTADO}?pagina=99`);
+        await screen.findByText('Mostrando 46–50 de 50 productos');
+
+        const buscar = screen.getByRole('textbox');
+        fireEvent.change(buscar, { target: { value: 'Repuesto 2' } });
+        expect(screen.getByText('Mostrando 1–9 de 11 productos')).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Página 2' }));
+        fireEvent.click(screen.getByRole('button', { name: productosApi[0].categoria }));
+        expect(screen.getByText('Mostrando 1–7 de 7 productos')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Página 2' }));
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'precio-mayor' } });
+        expect(screen.getByText('Mostrando 1–9 de 50 productos')).toBeTruthy();
+        expect(screen.getAllByRole('img')[0].alt).toBe('Repuesto 50');
+        fireEvent.click(screen.getByRole('button', { name: 'Página 4' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+        expect(screen.getByText('Mostrando 1–9 de 50 productos')).toBeTruthy();
+        expect(screen.getAllByRole('img')[0].alt).toBe('Repuesto 1');
+    });
+
+    it('reemplaza una imagen rota y distingue agotado de crítico en tarjeta y detalle', async () => {
+        const [base, otro] = productosApi;
+        const agotado = { ...base, stock: 0, stockCritico: 2, imagen: '/images/catalogo-ev3/frenos.webp' };
+        const critico = { ...otro, stock: 2, stockCritico: 2, imagen: '' };
+        simularCatalogo(fetchSimulado, [agotado, critico]);
+        renderizar();
+
+        const imagen = await screen.findByRole('img', { name: agotado.nombre });
+        const tarjeta = within(imagen.closest('.card'));
+        expect(tarjeta.getByText('Agotado')).toBeTruthy();
+        expect(tarjeta.queryByText('Stock crítico')).toBeNull();
+        expect(tarjeta.getByRole('button', { name: /al carrito conectado/ }).disabled).toBeTrue();
+        expect(screen.getByText('Stock crítico')).toBeTruthy();
+        expect(screen.getByRole('button', { name: `Agregar ${critico.nombre} al carrito conectado` }).disabled).toBeFalse();
+        expect(screen.getByRole('img', { name: critico.nombre }).getAttribute('src')).toBe(IMAGEN_PRODUCTO_ALTERNATIVA);
+        fireEvent.error(imagen);
+        expect(imagen.getAttribute('src')).toBe(IMAGEN_PRODUCTO_ALTERNATIVA);
+        fireEvent.error(imagen);
+        expect(imagen.getAttribute('src')).toBe(IMAGEN_PRODUCTO_ALTERNATIVA);
+
+        fireEvent.click(tarjeta.getByRole('link', { name: 'Ver detalle' }));
+        const imagenDetalle = screen.getByRole('img', { name: agotado.nombre });
+        expect(imagenDetalle.getAttribute('src')).toBe(agotado.imagen);
+        fireEvent.error(imagenDetalle);
+        expect(imagenDetalle.getAttribute('src')).toBe(IMAGEN_PRODUCTO_ALTERNATIVA);
+        expect(screen.getByText('Agotado')).toBeTruthy();
+        expect(screen.queryByText('Stock crítico')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Agregar al carrito conectado' }).disabled).toBeTrue();
     });
 
     it('abre el detalle por ObjectId y protege el carrito local en ambas pantallas', async () => {

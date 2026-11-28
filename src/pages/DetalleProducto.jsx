@@ -1,10 +1,13 @@
 import { Link, useParams } from 'react-router-dom';
 
 import {
+    IMAGEN_PRODUCTO_ALTERNATIVA,
+    mostrarImagenProductoAlternativa,
     obtenerProductos,
     obtenerDescuentoProducto,
     obtenerPrecioFinalProducto,
-    productoEstaEnOferta
+    productoEstaEnOferta,
+    productoTieneStockCritico
 } from '../services/productosService';
 
 import {
@@ -63,6 +66,7 @@ export default function DetalleProducto() {
         );
 
     const precioFinal = conectado ? producto.precioFinal : obtenerPrecioFinalProducto(producto);
+    const agotado = producto.stock <= 0;
     const cantidadEnCarrito = conectado
         ? remoto.carrito.find((linea) => mismoIdProducto(linea.id, producto.id))?.cantidad ?? 0
         : 0;
@@ -85,6 +89,7 @@ export default function DetalleProducto() {
 
 
     function agregarConPrecioFinal() {
+        if (agotado) return;
         if (conectado) {
             remoto.agregarProducto(producto);
             return;
@@ -112,7 +117,8 @@ export default function DetalleProducto() {
                 <div className="col-md-6">
 
                     <img
-                        src={producto.imagen}
+                        src={producto.imagen || IMAGEN_PRODUCTO_ALTERNATIVA}
+                        onError={mostrarImagenProductoAlternativa}
                         alt={producto.nombre}
                         className="img-fluid rounded shadow-sm"
                     />
@@ -211,17 +217,8 @@ export default function DetalleProducto() {
                     </p>
 
 
-                    {
-                        producto.stock <=
-                        producto.stockCritico
-                        && (
-
-                            <div className="alert alert-warning">
-                                Stock crítico
-                            </div>
-
-                        )
-                    }
+                    {agotado && <div className="alert alert-danger">Agotado</div>}
+                    {productoTieneStockCritico(producto) && <div className="alert alert-warning">Stock crítico</div>}
 
 
                     <div className="d-flex gap-2 mt-4">
@@ -229,7 +226,7 @@ export default function DetalleProducto() {
                         {(!conectado || !vendedor) && <button
                             type="button"
                             className="btn btn-danger"
-                            disabled={producto.stock <= 0 ||
+                            disabled={agotado ||
                                 (conectado && (remoto.intento || cantidadEnCarrito >= producto.stock))}
                             onClick={agregarConPrecioFinal}
                         >

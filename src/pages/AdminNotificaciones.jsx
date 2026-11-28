@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { obtenerProductos } from '../services/productosService';
+import { obtenerProductos, productoTieneStockCritico } from '../services/productosService';
 
 import { useBaseAdmin } from '../context/catalogo';
 
@@ -13,9 +13,8 @@ export default function AdminNotificaciones({ conectado = false }) {
     const consulta = useConsultaCatalogoAdmin(conectado, listarProductosAdmin);
     const productos = conectado ? consulta.datos ?? [] : obtenerProductos();
 
-    const productosStockCritico = productos.filter(
-        (producto) =>
-            producto.stock <= producto.stockCritico
+    const productosConAlerta = productos.filter(
+        (producto) => producto.stock <= 0 || productoTieneStockCritico(producto)
     );
 
     return (
@@ -41,22 +40,22 @@ export default function AdminNotificaciones({ conectado = false }) {
                     <div className="d-flex justify-content-between align-items-center mb-3">
 
                         <h4 className="mb-0">
-                            Stock crítico
+                            Stock crítico y agotados
                         </h4>
 
                         <span className="badge text-bg-danger">
-                            {productosStockCritico.length}
+                            {productosConAlerta.length}
                         </span>
 
                     </div>
 
-                    {productosStockCritico.length === 0 ? (
+                    {productosConAlerta.length === 0 ? (
 
                         <div className="alert alert-success mb-0">
 
                             <i className="bi bi-check-circle me-2"></i>
 
-                            No existen productos con stock crítico.
+                            No existen productos agotados ni con stock crítico.
 
                         </div>
 
@@ -64,7 +63,7 @@ export default function AdminNotificaciones({ conectado = false }) {
 
                         <div className="list-group">
 
-                            {productosStockCritico.map((producto) => (
+                            {productosConAlerta.map((producto) => (
 
                                 <div
                                     key={producto.id}
@@ -84,7 +83,7 @@ export default function AdminNotificaciones({ conectado = false }) {
                                             </p>
 
                                             <p className="mb-0 text-danger fw-bold">
-                                                Stock actual: {producto.stock}
+                                                {producto.stock <= 0 ? 'Agotado' : `Stock actual: ${producto.stock}`}
                                             </p>
 
                                             <p className="mb-0 text-muted">
